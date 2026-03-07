@@ -41,25 +41,41 @@ Makefile                          - Build system
 
 ## STEP 2: Build, Test & Validate Serial Version
 **Assigned to:** Person 1 (Lead)
-**Status:** IN PROGRESS
+**Status:** COMPLETED
 
 ### Tasks:
-- [ ] Install build tools (GCC, Make) via WSL or MinGW
-- [ ] Build graph generator: `make gen_graph`
-- [ ] Generate test graphs of different sizes
-- [ ] Build serial version: `make serial`
-- [ ] Run serial on small graph, verify output manually
-- [ ] Run serial on medium/large graphs, record execution times
-- [ ] Save serial distance results (used as ground truth for all parallel versions)
+- [x] Build tools found: MSYS2 GCC 13.1.0, GNU Make 4.4.1 (already on machine)
+- [x] Build graph generator: compiled with zero errors/warnings
+- [x] Generate test graphs of different sizes (tiny, small, medium, large)
+- [x] Build serial version: compiled with zero errors/warnings
+- [x] Run serial on tiny graph (6V, 10E), manually verified all distances correct
+- [x] Run serial on small/medium/large graphs, recorded execution times
+- [x] Fixed graph generator: Johnson's reweighting technique guarantees no negative cycles
+- [x] Save serial distance results (used as ground truth for all parallel versions)
+
+### Bug Fixed:
+- Original generator could produce negative-weight cycles (crashed on small graph)
+- Fixed with Johnson's Reweighting: assign vertex potentials h[v], edge weight = base + h[src] - h[dest]
+- Cycle weights always positive (h terms telescope), but individual edges can be negative (~12%)
 
 ### Test Graph Sizes:
-| Label      | Vertices | Edges      | File                    |
-|------------|----------|------------|-------------------------|
-| Tiny       | 6        | 8          | graphs/tiny.txt         |
-| Small      | 1,000    | 10,000     | graphs/small.txt        |
-| Medium     | 10,000   | 100,000    | graphs/medium.txt       |
-| Large      | 100,000  | 1,000,000  | graphs/large.txt        |
-| Very Large | 500,000  | 5,000,000  | graphs/vlarge.txt       |
+| Label      | Vertices | Edges      | File                    | Neg. Edges |
+|------------|----------|------------|-------------------------|------------|
+| Tiny       | 6        | 10         | graphs/tiny.txt         | 3 (30.0%)  |
+| Small      | 1,000    | 10,000     | graphs/small.txt        | 1188 (11.9%) |
+| Medium     | 10,000   | 100,000    | graphs/medium.txt       | 11846 (11.8%) |
+| Large      | 100,000  | 1,000,000  | graphs/large.txt        | 117096 (11.7%) |
+
+### Serial Baseline Timing Results:
+| Graph   | Vertices | Edges      | Time (s)  | Iterations | Early Stop? |
+|---------|----------|------------|-----------|------------|-------------|
+| Tiny    | 6        | 10         | 0.000111  | 2 of 5     | Yes         |
+| Small   | 1,000    | 10,000     | 0.000450  | 9 of 999   | Yes         |
+| Medium  | 10,000   | 100,000    | 0.001852  | 10 of 9999 | Yes         |
+| Large   | 100,000  | 1,000,000  | 0.022036  | 13 of 99999| Yes         |
+
+> Note: Early termination works well due to Johnson's reweighting - graph structure 
+> allows shortest paths to converge in very few iterations.
 
 ### How to run:
 ```bash

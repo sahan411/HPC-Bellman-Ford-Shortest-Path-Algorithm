@@ -5,8 +5,8 @@
  * Generates random directed weighted graphs and saves them to files.
  * The generated graphs are designed for testing Bellman-Ford:
  *   - Directed edges with integer weights
- *   - Mostly positive weights, some negative (to justify using Bellman-Ford)
- *   - No negative-weight cycles (so shortest paths are well-defined)
+ *   - Some negative edge weights (to justify using Bellman-Ford over Dijkstra)
+ *   - GUARANTEED no negative-weight cycles (so shortest paths are well-defined)
  *   - Connected graph (every vertex reachable from vertex 0)
  *
  * How we ensure connectivity:
@@ -15,12 +15,19 @@
  *   2. Then, add (E - V + 1) more random edges.
  *      These create alternate paths and make the graph interesting.
  *
- * How we avoid negative cycles:
- *   - Spanning tree edges use positive weights only [1, 20]
- *   - Additional edges use weights in [-5, 50]
- *   - The positive spanning tree backbone makes negative cycles very unlikely
- *     in random graphs of reasonable density
- *   - Bellman-Ford's Step 3 will detect if one occurs (safety net)
+ * How we GUARANTEE no negative cycles (Johnson's Reweighting):
+ *   This is a well-known technique from graph theory:
+ *   1. Assign each vertex a random "potential" value h[v] in range [0, 20]
+ *   2. Generate a base positive weight w_base for each edge (u, v)
+ *   3. Final edge weight = w_base + h[u] - h[v]
+ *
+ *   Why this works:
+ *   - For ANY cycle v0 -> v1 -> ... -> vk -> v0, the sum of h[u]-h[v]
+ *     terms telescopes to ZERO: h[v0]-h[v1] + h[v1]-h[v2] + ... + h[vk]-h[v0] = 0
+ *   - So the cycle's total weight = sum of w_base values (all positive!)
+ *   - Therefore NO CYCLE can have negative total weight
+ *   - But individual edges CAN be negative (when h[v] > w_base + h[u])
+ *   - This gives us graphs with ~20-30% negative edges, perfect for Bellman-Ford
  *
  * Usage:
  *   ./gen_graph <vertices> <edges> <output_file> [random_seed]
@@ -111,7 +118,7 @@ int main(int argc, char *argv[]) {
 
     printf("Generating graph: %d vertices, %d edges\n", V, E);
 
-    /* ---- Allocate edge arrays ---- */
+    /* ---- Allocate edge arrays and vertex potentials ---- */
     int *src  = (int *)malloc(E * sizeof(int));
     int *dest = (int *)malloc(E * sizeof(int));
     int *wt   = (int *)malloc(E * sizeof(int));
@@ -119,6 +126,30 @@ int main(int argc, char *argv[]) {
     if (src == NULL || dest == NULL || wt == NULL) {
         fprintf(stderr, "Error: Memory allocation failed.\n");
         return 1;
+    }
+
+    /* ================================================================
+     * Vertex Potentials (Johnson's Reweighting Technique)
+     * ================================================================
+     * Assign each vertex a random "potential" h[v].
+     * Edge weight = base_weight + h[src] - h[dest]
+     *
+     * For any cycle, the h[] terms cancel out (telescope to zero),
+     * so cycle weight = sum of base weights = always positive.
+     * But individual edges can have negative weight when h[dest] > base + h[src].
+     *
+     * This is the same technique used in Johnson's All-Pairs algorithm.
+     */
+    int *h = (int *)malloc(V * sizeof(int));  /* vertex potentials */
+    if (h == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed for potentials.\n");
+        return 1;
+    }
+
+    int i;
+    printf("Assigning vertex potentials (Johnson's technique)...\n");
+    for (i = 0; i < V; i++) {
+        h[i] = random_int(0, 20);  /* potential in [0, 20] */
     }
 
     int edge_count = 0;
@@ -131,7 +162,9 @@ int main(int argc, char *argv[]) {
      * Method: Create a random permutation of vertices [0, 1, ..., V-1].
      * Then connect perm[0]->perm[1], perm[1]->perm[2], etc.
      * This creates a random path through all vertices (a spanning tree).
-     * All spanning tree edges get POSITIVE weights [1, 20].
+     *
+     * Base weight: random [1, 10]
+     * Final weight = base + h[src] - h[dest]  (can be negative!)
      */
     printf("Phase 1: Creating spanning tree (%d edges)...\n", V - 1);
 
@@ -142,7 +175,6 @@ int main(int argc, char *argv[]) {
     }
 
     /* Initialize permutation: [0, 1, 2, ..., V-1] */
-    int i;
     for (i = 0; i < V; i++) {
         perm[i] = i;
     }
@@ -153,9 +185,12 @@ int main(int argc, char *argv[]) {
 
     /* Connect consecutive vertices in the permutation */
     for (i = 0; i < V - 1; i++) {
-        src[edge_count]  = perm[i];
-        dest[edge_count] = perm[i + 1];
-        wt[edge_count]   = random_int(1, 20);  /* positive weights only */
+        int u = perm[i];
+        int v = perm[i + 1];
+        int base_w = random_int(1, 10);  /* positive base weight */
+        src[edge_count]  = u;
+        dest[edge_count] = v;
+        wt[edge_count]   = base_w + h[u] - h[v];  /* Johnson's reweighting */
         edge_count++;
     }
 
@@ -165,10 +200,14 @@ int main(int argc, char *argv[]) {
      * PHASE 2: Add remaining random edges (E - V + 1 edges)
      * ================================================================
      * These create alternative paths and make the graph more interesting.
-     * Some edges get negative weights to showcase Bellman-Ford's capability.
      *
-     * About 15% of additional edges get negative weights [-5, -1].
-     * The rest get positive weights [1, 50].
+     * Base weight: random [1, 30]
+     * Final weight = base + h[src] - h[dest]  (can be negative!)
+     *
+     * Since h[v] ranges [0,20] and base ranges [1,30]:
+     * - Worst case: base=1, h[src]=0, h[dest]=20 --> weight = 1+0-20 = -19
+     * - Best case: base=30, h[src]=20, h[dest]=0 --> weight = 30+20-0 = 50
+     * - About 20-30% of edges will be negative (nice for Bellman-Ford)
      */
     int remaining = E - edge_count;
     printf("Phase 2: Adding %d random edges...\n", remaining);
@@ -199,16 +238,15 @@ int main(int argc, char *argv[]) {
             if (duplicate) continue;
         }
 
-        /* Assign weight: ~15% chance of negative */
+        /* Assign weight using Johnson's reweighting */
+        int base_w = random_int(1, 30);  /* positive base weight */
         src[edge_count]  = s;
         dest[edge_count] = d;
-        if (random_int(1, 100) <= 15) {
-            wt[edge_count] = random_int(-5, -1);    /* negative edge */
-        } else {
-            wt[edge_count] = random_int(1, 50);     /* positive edge */
-        }
+        wt[edge_count]   = base_w + h[s] - h[d];  /* Johnson's reweighting */
         edge_count++;
     }
+
+    free(h);  /* done with potentials */
 
     /* If we couldn't generate enough unique edges, adjust E */
     if (edge_count < E) {
