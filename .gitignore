@@ -1,0 +1,33 @@
+# ==============================================================================
+# .gitignore - Bellman-Ford HPC Project
+# ==============================================================================
+
+# ---- Compiled binaries ----
+bin/
+*.o
+*.exe
+*.out
+
+# ---- Generated graph files (too large for git) ----
+graphs/*.txt
+
+# ---- Result files (regenerated during benchmarks) ----
+results/*.txt
+results/*.csv
+results/*.png
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- IDE files ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Temporary files ----
+*.tmp
+*.log
