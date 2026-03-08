@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bellman-Ford HPC Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <i class="fa-solid fa-network-wired logo-icon"></i>
+                <h2>HPC Flow</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Execute</span>
+                </a>
+                <a href="#" class="nav-item tooltip-trigger" title="Coming soon">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Benchmarks</span>
+                </a>
+                <a href="#" class="nav-item tooltip-trigger" title="Coming soon">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Reports</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>Team HPC &copy; 2026</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h1>Bellman-Ford Algorithm</h1>
+                    <p class="subtitle">Shortest Path High Performance Computing</p>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                
+                <!-- Configuration Panel -->
+                <section class="card config-panel">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-sliders"></i> Configuration</h3>
+                    </div>
+                    
+                    <form id="run-form" class="config-form">
+                        
+                        <!-- Algorithm Selection -->
+                        <div class="form-group">
+                            <label for="algorithm">Implementation</label>
+                            <div class="custom-select-wrapper">
+                                <select id="algorithm" name="algorithm" required>
+                                    <option value="serial">Serial Baseline</option>
+                                    <option value="openmp">OpenMP (Shared Memory)</option>
+                                    <option value="mpi">MPI (Distributed Memory)</option>
+                                    <option value="hybrid">Hybrid (MPI + OpenMP)</option>
+                                    <option value="cuda">CUDA (GPU)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down select-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Graph File Selection -->
+                        <div class="form-group">
+                            <label for="graph-file">Graph File</label>
+                            <div class="custom-select-wrapper">
+                                <select id="graph-file" name="graph_file" required>
+                                    <option value="">Loading graphs...</option>
+                                    <!-- Options injected by JS -->
+                                </select>
+                                <i class="fa-solid fa-chevron-down select-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <!-- Source Vertex -->
+                            <div class="form-group half">
+                                <label for="source">Source Vertex</label>
+                                <input type="number" id="source" name="source" value="0" min="0" required>
+                            </div>
+                        </div>
+
+                        <!-- Parallel Parameters (Hidden based on selection) -->
+                        <div id="parallel-params" class="form-row dynamic-inputs hidden">
+                            <div class="form-group half" id="threads-group">
+                                <label for="threads" class="accent-text"><i class="fa-solid fa-microchip"></i> Threads</label>
+                                <input type="number" id="threads" name="threads" value="4" min="1" max="128">
+                            </div>
+                            
+                            <div class="form-group half" id="procs-group">
+                                <label for="processes" class="accent-text"><i class="fa-solid fa-server"></i> Processes</label>
+                                <input type="number" id="processes" name="processes" value="4" min="1" max="128">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submit-btn" class="btn-primary">
+                            <span>Execute Run</span>
+                            <i class="fa-solid fa-bolt"></i>
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Results Panel -->
+                <section class="card results-panel">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-terminal"></i> Output console</h3>
+                        <div class="status-indicator">
+                            <span id="status-dot" class="dot idle"></span>
+                            <span id="status-text">Idle</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-row hidden" id="stats-container">
+                        <div class="stat-box">
+                            <span class="stat-label">Execution Time</span>
+                            <span class="stat-value highlight" id="stat-time">-- s</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Algorithm</span>
+                            <span class="stat-value" id="stat-alg">--</span>
+                        </div>
+                    </div>
+
+                    <div class="console-wrapper">
+                        <div class="console-overlay" id="loading-overlay">
+                            <div class="loader"></div>
+                            <p>Executing algorithm...</p>
+                        </div>
+                        <pre id="console-output">Ready for execution...</pre>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- JS Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
