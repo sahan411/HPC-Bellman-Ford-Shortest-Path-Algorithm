@@ -46,48 +46,56 @@ def run_algorithm():
     command = []
     env = os.environ.copy()
 
+    try:
+        # Detect correct WSL distribution (avoid docker-desktop)
+        distro_arg = []
         try:
+            wsl_list = subprocess.check_output(["wsl", "-l", "-q"], text=True, encoding='utf-16le', errors='ignore')
+            for line in wsl_list.splitlines():
+                distro = line.strip('\x00').strip()
+                if distro and "docker" not in distro.lower():
+                    distro_arg = ["-d", distro]
+                    break
+        except Exception:
+            pass
+
+        # Convert Windows paths to WSL format (e.g., F:\HPC\... to /mnt/f/HPC/...)
+        def wsl_path(win_path):
+            if not win_path: return win_path
+            path = win_path.replace('\\', '/')
+            if ':' in path:
+                drive, rest = path.split(':', 1)
+                path = f"/mnt/{drive.lower()}{rest}"
+            return path
+
+        wsl_graph_path = wsl_path(os.path.abspath(graph_path))
+        wsl_bin_dir = wsl_path(os.path.abspath(BIN_DIR))
+
         if algorithm == 'serial':
-            executable = os.path.join(BIN_DIR, "bellman_ford_serial").replace('\\', '/')
-            command = ["wsl", "./" + executable, graph_path, str(source)]
+            executable = f"{wsl_bin_dir}/bellman_ford_serial"
+            command = ["wsl"] + distro_arg + [executable, wsl_graph_path, str(source)]
         
         elif algorithm == 'openmp':
-            executable = os.path.join(BIN_DIR, "bellman_ford_openmp").replace('\\', '/')
-            env['OMP_NUM_THREADS'] = str(threads)
-            command = ["wsl", "./" + executable, graph_path, str(source)]
+            executable = f"{wsl_bin_dir}/bellman_ford_openmp"
+            command = ["wsl"] + distro_arg + ["bash", "-c", f"export OMP_NUM_THREADS={threads} && {executable} {wsl_graph_path} {source}"]
             
         elif algorithm == 'mpi':
-            executable = os.path.join(BIN_DIR, "bellman_ford_mpi").replace('\\', '/')
-            command = ["wsl", "mpiexec", "-np", str(processes), "./" + executable, graph_path, str(source)]
+            executable = f"{wsl_bin_dir}/bellman_ford_mpi"
+            command = ["wsl"] + distro_arg + ["mpiexec", "-np", str(processes), executable, wsl_graph_path, str(source)]
             
         elif algorithm == 'hybrid':
-            executable = os.path.join(BIN_DIR, "bellman_ford_hybrid").replace('\\', '/')
-            env['OMP_NUM_THREADS'] = str(threads)
-            command = ["wsl", "mpiexec", "-np", str(processes), "./" + executable, graph_path, str(source)]
+            executable = f"{wsl_bin_dir}/bellman_ford_hybrid"
+            command = ["wsl"] + distro_arg + ["bash", "-c", f"export OMP_NUM_THREADS={threads} && mpiexec -np {processes} {executable} {wsl_graph_path} {source}"]
             
         elif algorithm == 'cuda':
-            executable = os.path.join(BIN_DIR, "bellman_ford_cuda").replace('\\', '/')
-            command = ["wsl", "./" + executable, graph_path, str(source)]
+            executable = f"{wsl_bin_dir}/bellman_ford_cuda"
+            command = ["wsl"] + distro_arg + [executable, wsl_graph_path, str(source)]
             
         else:
             return jsonify({"success": False, "error": f"Unknown algorithm: {algorithm}"})
 
         # Remove direct OS binary checks as Windows won't natively see Linux binaries without extension correctly
         # We rely on WSL returning an error if the binary is missing
-
-        # Run the command
-        # Note: environment variables (like OMP_NUM_THREADS) need to be passed into WSL
-        # To do this safely, we export the variable before running the command
-        if algorithm in ['openmp', 'hybrid']:
-            wsl_cmd_string = f"export OMP_NUM_THREADS={threads} && " + " ".join(command[1:])
-            command = ["wsl", "bash", "-c", wsl_cmd_string]
-        
-        # When sending paths to WSL, they need to use forward slashes. 
-        # Python's replace('\\', '/') handles Windows paths.
-        graph_path = graph_path.replace('\\', '/')
-        if algorithm not in ['openmp', 'hybrid']:
-            for i, arg in enumerate(command):
-                command[i] = command[i].replace('\\', '/')
 
         process = subprocess.Popen(
             command,
