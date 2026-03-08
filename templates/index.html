@@ -7,6 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Vis.js Network -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -139,6 +142,23 @@
                         </div>
                         <pre id="console-output">Ready for execution...</pre>
                     </div>
+                </section>
+                
+                <!-- Graph Visualization Panel -->
+                <section class="card vis-panel" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-project-diagram"></i> Network Graph Preview</h3>
+                        <div class="status-indicator">
+                            <span id="graph-stats" style="color: var(--text-muted)">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div id="graph-warning" class="warning-banner hidden">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span><strong>Large Graph Warning:</strong> Since the file contains too many edges, only the first 500 edges are displayed to prevent browser crash.</span>
+                    </div>
+
+                    <div id="graph-network"></div>
                 </section>
 
             </div>

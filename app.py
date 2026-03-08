@@ -24,6 +24,71 @@ def get_graphs():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+@app.route('/api/graph_data', methods=['GET'])
+def get_graph_data():
+    """Reads a graph file and returns its nodes/edges for visualization"""
+    graph_file = request.args.get('file')
+    if not graph_file:
+         return jsonify({"success": False, "error": "No file specified"})
+
+    graph_path = os.path.join(GRAPHS_DIR, graph_file)
+    if not os.path.exists(graph_path):
+         return jsonify({"success": False, "error": "File not found"})
+
+    nodes = []
+    edges = []
+    truncated = False
+    MAX_EDGES = 500
+
+    try:
+        with open(graph_path, 'r') as f:
+            lines = f.readlines()
+            
+            if not lines:
+                raise ValueError("Empty file")
+
+            # First line is V E
+            header = lines[0].strip().split()
+            V = int(header[0])
+            E = int(header[1])
+
+            # Add nodes
+            for i in range(V):
+                # Don't add a million nodes to UI. Limit to nodes that appear in the first MAX_EDGES
+                if i > MAX_EDGES * 2: 
+                    break
+                nodes.append({"id": i, "label": str(i)})
+
+            # Add edges
+            count = 0
+            for line in lines[1:]:
+                parts = line.strip().split()
+                if len(parts) >= 3:
+                    u, v, w = map(int, parts[:3])
+                    edges.append({
+                        "from": u,
+                        "to": v,
+                        "label": str(w),
+                        "arrows": "to" # Directed graph
+                    })
+                    count += 1
+                    
+                    if count >= MAX_EDGES:
+                        truncated = True
+                        break
+
+            return jsonify({
+                "success": True, 
+                "nodes": nodes, 
+                "edges": edges, 
+                "truncated": truncated,
+                "totalV": V,
+                "totalE": E
+            })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/api/run', methods=['POST'])
 def run_algorithm():
     data = request.json

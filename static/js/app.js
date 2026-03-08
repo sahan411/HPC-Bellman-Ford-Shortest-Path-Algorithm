@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const statTime = document.getElementById('stat-time');
     const statAlg = document.getElementById('stat-alg');
 
+    // Graph Elements
+    const graphNetwork = document.getElementById('graph-network');
+    const graphWarning = document.getElementById('graph-warning');
+    const graphStats = document.getElementById('graph-stats');
+    let network = null;
+
     // 1. Fetch available graphs on load
     fetchGraphs();
 
@@ -50,6 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     option.textContent = graph;
                     graphSelect.appendChild(option);
                 });
+                
+                // Load first graph right away
+                if (data.graphs.length > 0) {
+                    fetchAndDrawGraph(data.graphs[0]);
+                }
+
             } else {
                 console.error("Failed to load graphs:", data.error);
                 graphSelect.innerHTML = '<option value="">Error loading graphs</option>';
@@ -94,7 +106,90 @@ document.addEventListener('DOMContentLoaded', () => {
     algorithmSelect.addEventListener('change', updateFormVisibility);
     updateFormVisibility(); // Init
 
-    // 3. Handle form submission
+    // 3. Listen for Graph File Selection Changes
+    graphSelect.addEventListener('change', () => {
+        if(graphSelect.value) {
+            fetchAndDrawGraph(graphSelect.value);
+        }
+    });
+
+    // 4. Fetch Graph Data and Draw
+    async function fetchAndDrawGraph(filename) {
+        try {
+            graphStats.textContent = "Loading graph structure...";
+            const response = await fetch(`/api/graph_data?file=${encodeURIComponent(filename)}`);
+            const data = await response.json();
+
+            if (data.success) {
+                graphStats.textContent = `${data.totalV} Nodes | ${data.totalE} Edges`;
+                
+                if (data.truncated) {
+                    graphWarning.classList.remove('hidden');
+                } else {
+                    graphWarning.classList.add('hidden');
+                }
+
+                drawGraph(data.nodes, data.edges);
+            } else {
+                graphStats.textContent = "Error loading graph";
+            }
+        } catch(error) {
+            console.error("Error drawing graph:", error);
+            graphStats.textContent = "Error";
+        }
+    }
+
+    function drawGraph(nodesData, edgesData) {
+        // Destroy old network if it exists
+        if (network !== null) {
+            network.destroy();
+            network = null;
+        }
+
+        const nodes = new vis.DataSet(nodesData);
+        const edges = new vis.DataSet(edgesData);
+        
+        const data = { nodes, edges };
+        
+        const options = {
+            nodes: {
+                shape: 'dot',
+                size: 16,
+                font: { color: '#ffffff', face: 'Inter', size: 12 },
+                color: {
+                    background: '#2f81f7',
+                    border: '#1f6feb',
+                    highlight: { background: '#ab68ff', border: '#ab68ff' }
+                },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 1.5,
+                color: { color: '#30363d', highlight: '#8b949e' },
+                font: { color: '#8b949e', face: 'Inter', size: 11, align: 'top' },
+                arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+                smooth: { type: 'continuous' }
+            },
+            physics: {
+                barnesHut: { 
+                    gravitationalConstant: -2000, 
+                    springConstant: 0.04,
+                    springLength: 95
+                },
+                stabilization: { iterations: 150 }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200,
+                zoomView: true
+            }
+        };
+
+        network = new vis.Network(graphNetwork, data, options);
+    }
+
+    // 5. Handle form submission
     runForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
