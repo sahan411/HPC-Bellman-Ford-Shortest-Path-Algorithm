@@ -30,13 +30,13 @@ int bellman_ford_openmp(Graph *graph, int source, int *dist) {
     Edge *edges = graph->edges;
 
     int max_threads = omp_get_max_threads();
-    int *thread_local = (int *)malloc((size_t)max_threads * (size_t)V * sizeof(int));
+    int *thread_buffers = (int *)malloc((size_t)max_threads * (size_t)V * sizeof(int));
     int *curr_dist = (int *)malloc((size_t)V * sizeof(int));
     int *next_dist = (int *)malloc((size_t)V * sizeof(int));
 
-    if (thread_local == NULL || curr_dist == NULL || next_dist == NULL) {
+    if (thread_buffers == NULL || curr_dist == NULL || next_dist == NULL) {
         fprintf(stderr, "Error: Failed to allocate OpenMP working buffers.\n");
-        free(thread_local);
+        free(thread_buffers);
         free(curr_dist);
         free(next_dist);
         return -1;
@@ -59,7 +59,7 @@ int bellman_ford_openmp(Graph *graph, int source, int *dist) {
 #pragma omp parallel reduction(||:updated)
         {
             int tid = omp_get_thread_num();
-            int *local = thread_local + ((size_t)tid * (size_t)V);
+            int *local = thread_buffers + ((size_t)tid * (size_t)V);
 
             for (int i = 0; i < V; i++) {
                 local[i] = curr_dist[i];
@@ -85,7 +85,7 @@ int bellman_ford_openmp(Graph *graph, int source, int *dist) {
         for (int i = 0; i < V; i++) {
             int best = curr_dist[i];
             for (int t = 0; t < max_threads; t++) {
-                int value = thread_local[(size_t)t * (size_t)V + (size_t)i];
+                int value = thread_buffers[(size_t)t * (size_t)V + (size_t)i];
                 if (value < best) {
                     best = value;
                 }
@@ -115,7 +115,7 @@ int bellman_ford_openmp(Graph *graph, int source, int *dist) {
         if (curr_dist[u] != INF && curr_dist[u] + w < curr_dist[v]) {
             printf("  WARNING: Negative-weight cycle detected!\n");
             printf("  Edge %d --> %d (weight %d) can still be relaxed.\n", u, v, w);
-            free(thread_local);
+            free(thread_buffers);
             free(curr_dist);
             free(next_dist);
             return -1;
@@ -126,7 +126,7 @@ int bellman_ford_openmp(Graph *graph, int source, int *dist) {
         dist[i] = curr_dist[i];
     }
 
-    free(thread_local);
+    free(thread_buffers);
     free(curr_dist);
     free(next_dist);
     return 0;

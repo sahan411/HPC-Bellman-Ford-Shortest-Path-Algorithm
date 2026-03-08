@@ -93,17 +93,32 @@ Makefile                          - Build system
 
 ## STEP 3: OpenMP Implementation (Shared Memory)
 **Assigned to:** Person 2
-**Status:** NOT STARTED
+**Status:** COMPLETED
 
 ### Tasks:
-- [ ] Study how OpenMP parallelizes loops (`#pragma omp parallel for`)
-- [ ] Implement `src/openmp/bellman_ford_openmp.c`
-- [ ] Handle race conditions on dist[] array (use `#pragma omp atomic` or local arrays)
-- [ ] Implement parallel early termination using OpenMP reduction
-- [ ] Build: `make openmp`
-- [ ] Test correctness: compare distances with serial output
-- [ ] Benchmark with 2, 4, 8, 16 threads
-- [ ] Record execution times in results/
+- [x] Study how OpenMP parallelizes loops (`#pragma omp parallel for`)
+- [x] Implement `src/openmp/bellman_ford_openmp.c`
+- [x] Handle race conditions on dist[] array (used thread-local arrays + merge)
+- [x] Implement parallel early termination using OpenMP reduction
+- [x] Build: `make openmp`
+- [x] Test correctness: compared distances with serial output (`VERIFICATION PASSED`)
+- [x] Benchmark with 2, 4, 8, 16 threads
+- [x] Record execution times in `results/openmp_benchmark_threads.csv`
+
+### What was done:
+- Implemented OpenMP Bellman-Ford in `src/openmp/bellman_ford_openmp.c`
+- Added thread control using `omp_set_num_threads()` (optional CLI arg)
+- Added parallel early-termination logic using OpenMP reduction
+- Saved OpenMP distances to `results/openmp_distances.txt`
+- Verified correctness against `results/serial_distances.txt`
+
+### OpenMP Benchmark (graphs/small.txt: 1,000V / 10,000E)
+| Threads | Time (s) | Verification |
+|---------|----------|--------------|
+| 2       | 0.003000 | PASS         |
+| 4       | 0.004000 | PASS         |
+| 8       | 0.006000 | PASS         |
+| 16      | 0.007000 | PASS         |
 
 ### Key OpenMP Concepts to Use:
 - `#pragma omp parallel for` - parallelize the edge relaxation loop
