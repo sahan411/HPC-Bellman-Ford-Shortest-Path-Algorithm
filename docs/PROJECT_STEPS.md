@@ -128,19 +128,19 @@ src/openmp/bellman_ford_openmp.c
 
 ## STEP 4: MPI Implementation (Distributed Memory)
 **Assigned to:** Person 3
-**Status:** NOT STARTED
+**Status:** COMPLETED
 
 ### Tasks:
-- [ ] Study MPI basics (rank, size, send/recv, collective operations)
-- [ ] Implement `src/mpi/bellman_ford_mpi.c`
-- [ ] Partition edges evenly across MPI processes
-- [ ] Each process relaxes its local edges, then synchronize with MPI_Allreduce
-- [ ] Use MPI_Allreduce with MPI_MIN to merge distances after each iteration
-- [ ] Implement parallel early termination using MPI_Allreduce on "updated" flag
-- [ ] Build: `make mpi`
-- [ ] Test correctness: compare distances with serial output
-- [ ] Benchmark with 2, 4, 8, 16 processes
-- [ ] Measure communication overhead (time in MPI calls vs computation)
+- [x] Study MPI basics (rank, size, send/recv, collective operations)
+- [x] Implement `src/mpi/bellman_ford_mpi.c`
+- [x] Partition edges evenly across MPI processes
+- [x] Each process relaxes its local edges, then synchronize with MPI_Allreduce
+- [x] Use MPI_Allreduce with MPI_MIN to merge distances after each iteration
+- [x] Implement parallel early termination using MPI_Allreduce on "updated" flag
+- [x] Build: `make mpi`
+- [x] Test correctness: compare distances with serial output
+- [x] Benchmark with 2, 4, 8, 16 processes
+- [x] Measure communication overhead (time in MPI calls vs computation)
 
 ### Key MPI Concepts to Use:
 - `MPI_Init` / `MPI_Finalize` - setup and teardown
