@@ -262,23 +262,30 @@ python scripts/plot_results.py     # re-generate charts
 
 ## STEP 9: Final Report
 **Assigned to:** All 3 members
-**Status:** NOT STARTED
+**Status:** ✅ COMPLETED
 
 ### Report Sections:
-- [ ] Introduction & Problem Statement
-- [ ] Literature Review (Bellman-Ford algorithm background)
-- [ ] Methodology (serial, OpenMP, MPI, Hybrid, CUDA approaches)
-- [ ] Implementation Details (code walkthrough, key design decisions)
-- [ ] Experimental Setup (hardware, graph sizes, configurations)
-- [ ] Results & Analysis (tables, charts, speedup, efficiency)
-- [ ] Challenges & Solutions (race conditions, load balancing, etc.)
-- [ ] Conclusion & Future Work
-- [ ] References
+- [x] Introduction & Problem Statement
+- [x] Literature Review (Bellman-Ford algorithm background)
+- [x] Methodology (serial, OpenMP, MPI, Hybrid, CUDA approaches)
+- [x] Implementation Details (code walkthrough, key design decisions)
+- [x] Experimental Setup (hardware, graph sizes, configurations)
+- [x] Results & Analysis (tables, charts, speedup, efficiency)
+- [x] Challenges & Solutions (race conditions, load balancing, etc.)
+- [x] Conclusion & Future Work
+- [x] References
 
-### Expected File:
+### Deliverable:
 ```
-docs/report.pdf
+docs/REPORT.md   ← comprehensive analysis and final report
 ```
+
+### Key Findings Summary:
+- Best parallel speedup on large graph (100K V, 1M E): **Hybrid 1×8 at 2.12x**
+- OpenMP scales well for large graphs (4 threads → 1.81x)
+- MPI overhead dominates for small graphs; benefits appear only at large scale
+- Parallel overhead outweighs benefit for tiny/small graphs (normal behaviour)
+- CUDA code implemented; compilation requires Windows 10 SDK (available on Linux)
 
 ---
 
