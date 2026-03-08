@@ -1,0 +1,45 @@
+graph,version,config,time_sec,speedup
+tiny,serial,1 thread,0.000002,1.00
+tiny,openmp,1 threads,N/A,N/A
+tiny,openmp,2 threads,0.001000,0.00
+tiny,openmp,4 threads,0.001000,0.00
+tiny,openmp,8 threads,0.002000,0.00
+tiny,mpi,1 procs,0.000019,0.11
+tiny,mpi,2 procs,0.000074,0.03
+tiny,mpi,4 procs,0.000175,0.01
+tiny,hybrid,1 procs x 8 threads,0.000883,0.00
+tiny,hybrid,2 procs x 4 threads,0.000842,0.00
+tiny,hybrid,4 procs x 2 threads,0.000838,0.00
+small,serial,1 thread,0.000168,1.00
+small,openmp,1 threads,0.001000,0.17
+small,openmp,2 threads,0.001000,0.17
+small,openmp,4 threads,0.001000,0.17
+small,openmp,8 threads,0.001000,0.17
+small,mpi,1 procs,0.000189,0.89
+small,mpi,2 procs,0.000296,0.57
+small,mpi,4 procs,0.000360,0.47
+small,hybrid,1 procs x 8 threads,0.001703,0.10
+small,hybrid,2 procs x 4 threads,0.001468,0.11
+small,hybrid,4 procs x 2 threads,0.001487,0.11
+medium,serial,1 thread,0.002191,1.00
+medium,openmp,1 threads,0.002000,1.10
+medium,openmp,2 threads,0.002000,1.10
+medium,openmp,4 threads,0.003000,0.73
+medium,openmp,8 threads,0.003000,0.73
+medium,mpi,1 procs,0.002074,1.06
+medium,mpi,2 procs,0.001827,1.20
+medium,mpi,4 procs,0.002321,0.94
+medium,hybrid,1 procs x 8 threads,0.002735,0.80
+medium,hybrid,2 procs x 4 threads,0.004071,0.54
+medium,hybrid,4 procs x 2 threads,0.003495,0.63
+large,serial,1 thread,0.029020,1.00
+large,openmp,1 threads,0.027000,1.07
+large,openmp,2 threads,0.019000,1.53
+large,openmp,4 threads,0.016000,1.81
+large,openmp,8 threads,0.018000,1.61
+large,mpi,1 procs,0.042833,0.68
+large,mpi,2 procs,0.036187,0.80
+large,mpi,4 procs,0.023815,1.22
+large,hybrid,1 procs x 8 threads,0.013666,2.12
+large,hybrid,2 procs x 4 threads,0.025306,1.15
+large,hybrid,4 procs x 2 threads,0.021890,1.33
