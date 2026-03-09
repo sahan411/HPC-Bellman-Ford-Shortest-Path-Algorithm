@@ -122,6 +122,12 @@ def run_hybrid(graph_file, source, procs, threads):
     return run_cmd(cmd, env=env)
 
 
+def run_cuda(graph_file, source):
+    """Run CUDA version."""
+    cmd = [r".\bin\bellman_ford_cuda.exe", graph_file, str(source)]
+    return run_cmd(cmd)
+
+
 def best_of(func, *args, reps=REPS):
     """
     Run func(*args) 'reps' times, return the best (minimum) elapsed time.
@@ -237,6 +243,22 @@ def main():
                 "time_sec": f"{t:.6f}" if t else "N/A",
                 "speedup": f"{sp:.2f}" if sp else "N/A"
             })
+
+        # ----------------------------------------------------------
+        # Step 5: CUDA
+        # ----------------------------------------------------------
+        print(f"\n[CUDA]")
+        t = best_of(run_cuda, graph_file, SOURCE, reps=REPS)
+        sp = speedup(serial_time, t)
+        status = f"{t:.6f}s  speedup={sp:.2f}x" if t else "FAILED / not built"
+        print(f"  GPU: {status}")
+        rows.append({
+            "graph": graph_name,
+            "version": "cuda",
+            "config": "GPU",
+            "time_sec": f"{t:.6f}" if t else "N/A",
+            "speedup": f"{sp:.2f}" if sp else "N/A"
+        })
 
     # ----------------------------------------------------------
     # Save results to CSV
