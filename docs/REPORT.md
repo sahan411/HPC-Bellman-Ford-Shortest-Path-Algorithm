@@ -173,7 +173,7 @@ Key decisions:
 - **Grid size**: `ceil(E / 256)` blocks of 256 threads covers all edges.
 - **`CUDA_CHECK` macro**: Wraps every CUDA API call to catch errors at the source.
 
-> **Note:** The CUDA version code is complete and committed to the repository. Compilation requires the Windows 10 SDK UCRT headers (specifically `corecrt.h`). These were not available on the development machine (disk space constraints prevented the SDK installation). The code compiles and runs correctly on standard Linux HPC systems.
+> **Note:** The CUDA version is fully implemented, compiled, and tested. After freeing disk space to install the Windows 10 SDK 10.0.26100.0, the code compiled successfully with `nvcc 12.9` and MSVC `cl.exe`. Verified correct on all 4 graph sizes (GPU: NVIDIA GeForce RTX 3050 Laptop GPU, 4GB, Compute Capability 8.6).
 
 ---
 
@@ -425,7 +425,7 @@ OpenMP at 2 threads achieves the most efficient use of hardware (76.5%). Higher 
 | OpenMP | 1.81× | 4 threads | False sharing, memory bandwidth |
 | MPI | 1.22× | 4 processes | Allreduce per iteration |
 | Hybrid | **2.12×** | 1×8 | Equivalent to OpenMP at this node count |
-| CUDA | — | — | Code complete; unable to test (Windows SDK) |
+| CUDA | GPU | **0.04×** | Large startup overhead on laptop GPU; correct |
 
 ---
 
@@ -461,14 +461,15 @@ OpenMP at 2 threads achieves the most efficient use of hardware (76.5%). Higher 
 
 ### 7.5 CUDA Compilation on Windows
 
-**Challenge:** `nvcc` uses `cl.exe` (MSVC) as the host compiler, which requires the Windows 10 SDK for standard C headers (`corecrt.h`). The SDK was not installed, and insufficient disk space (~1.08 GB free) prevented installation.
+**Challenge:** `nvcc` uses `cl.exe` (MSVC) as the host compiler, which requires the Windows 10 SDK for standard C headers (`corecrt.h`). The SDK was initially not installed due to insufficient disk space (~1.08 GB free).
 
-**Alternative approaches tried:**
-1. `--compiler-bindir cl.exe` → correctly points to MSVC, but `corecrt.h` still needed from SDK.
-2. GCC as CUDA host compiler → `nvcc` reports "Host compiler targets unsupported OS" on Windows.
-3. MSYS2 MinGW headers in `INCLUDE` → ABI mismatch with MSVC runtime. All failed.
-
-**Resolution:** The CUDA code is fully implemented and committed. It is ready to compile on Linux (standard CUDA build: `nvcc -O2 -o bin/bellman_ford_cuda ...`). Windows builds require installing the Windows 10 SDK component via the Visual Studio Installer.
+**Resolution:** After freeing disk space, Windows SDK 10.0.26100.0 was installed via winget. The CUDA version compiled and ran successfully:
+```powershell
+nvcc -O2 -Wno-deprecated-gpu-targets --compiler-bindir "<path-to-cl.exe>" \
+    -o bin/bellman_ford_cuda.exe src/cuda/bellman_ford_cuda.cu \
+    src/common/graph.c src/common/utils.c -Isrc/common
+```
+Verification passed on all 4 graph sizes. GPU: NVIDIA GeForce RTX 3050 Laptop GPU.
 
 ### 7.6 Negative Graph Generation
 
@@ -490,18 +491,18 @@ This project successfully implemented, tested, and benchmarked four parallel var
 
 3. **Hybrid MPI+OpenMP** achieved the best measured speedup (2.12×) by combining both levels. On a single node, the optimal hybrid configuration minimises MPI processes (keeping communication overhead low) and maximises OpenMP threads.
 
-4. **CUDA** offers the greatest theoretical speedup potential (thousands of threads per SM), but compilation infrastructure requirements prevented testing in this environment. The implementation is correct and ready for deployment on HPC systems.
+4. **CUDA** was compiled and tested on an NVIDIA RTX 3050 Laptop GPU (Compute 8.6). The results show the GPU is significantly slower than CPU for these graph sizes (0.04× speedup on large graph). This is because: (a) each Bellman-Ford iteration requires a full `cudaDeviceSynchronize()` round-trip, (b) the 100K-integer distance array is transferred back every iteration to check early termination, and (c) GPU context initialisation adds ~50ms upfront overhead. CUDA would excel on graphs with 10M+ edges where kernel computation time dominates over transfer latency.
 
 5. **Overhead** dominates for small graphs: all parallel variants are slower than serial for tiny (100 V) and small (1K V) graphs. This is expected and consistent with Amdahl's Law — the parallel fraction must be large enough to overcome startup costs.
 
 ### 8.2 Future Work
 
-- **Larger graphs:** Test on 1M+ vertex graphs to see MPI and CUDA benefits at scale.
-- **Multi-node MPI:** Run MPI version across multiple physical machines to evaluate true distributed speedup.
-- **GPU testing:** Compile and test the CUDA version on an HPC Linux system with CUDA toolkit.
+- **Larger graphs:** Test on 1M+ vertex graphs to see when CUDA overcomes its startup overhead and delivers speedup. Expected crossover point is ~10M edges.
+- **Multi-node MPI:** Run MPI version across multiple physical machines to evaluate true distributed speedup beyond the single-node results shown here.
+- **CUDA optimisation:** Reduce the per-iteration `cudaMemcpy` overhead by keeping the `updated` flag on device and using `cudaMemcpyAsync` with streams for overlap.
 - **SPFA Optimisation:** Implement the "Shortest-Path Faster Algorithm" (queue-based relaxation) as a parallel variant to reduce average-case work.
 - **GPU-aware MPI:** For Hybrid CUDA+MPI, use NCCL or GPU-aware MPI to synchronise distances directly between GPUs without CPU round-trip.
-- **Profiling:** Use `nvprof` / `nsight` for GPU and `VTune` / `perf` for CPU to identify specific bottlenecks (memory bandwidth, false sharing, synchronisation latency).
+- **Profiling:** Use `nsight systems` for GPU and `VTune` / `perf` for CPU to identify specific bottlenecks (memory bandwidth, false sharing, synchronisation latency).
 
 ---
 

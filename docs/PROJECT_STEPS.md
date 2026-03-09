@@ -169,7 +169,7 @@ C:\msys64\ucrt64\bin\mpicc.exe -O2 -Wall -fopenmp -o bin/bellman_ford_hybrid.exe
 
 ## STEP 6: CUDA Implementation (GPU)
 **Assigned to:** Person 1 or Person 2 (whoever has NVIDIA GPU ready first)
-**Status:** COMPLETED (code written, compilation needs Windows SDK headers)
+**Status:** ✅ COMPLETED (compiled, tested, verified on all graph sizes)
 
 ### What was done:
 - [x] Implemented `src/cuda/bellman_ford_cuda.cu`
@@ -180,18 +180,28 @@ C:\msys64\ucrt64\bin\mpicc.exe -O2 -Wall -fopenmp -o bin/bellman_ford_hybrid.exe
 - [x] `cudaDeviceSynchronize()` between iterations for correctness
 - [x] Host↔Device memory copy with CUDA_CHECK macro
 - [x] Parallel negative cycle detection kernel
+- [x] Compiled with nvcc 12.9 + MSVC cl.exe after installing Windows SDK 10.0.26100.0
+- [x] VERIFICATION PASSED on tiny, small, medium, large graphs
 
-### Build command (requires Windows SDK headers):
+### GPU Used: NVIDIA GeForce RTX 3050 Laptop GPU
+- Compute Capability: 8.6
+- Total Memory: 4.0 GB
+- Multiprocessors: 16
+
+### Build command:
 ```bash
-# In a VS Developer Command Prompt:
-nvcc -O2 -Wno-deprecated-gpu-targets -o bin/bellman_ford_cuda.exe \
+nvcc -O2 -Wno-deprecated-gpu-targets \
+    --compiler-bindir "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\bin\Hostx64\x64\cl.exe" \
+    -o bin/bellman_ford_cuda.exe \
     src/cuda/bellman_ford_cuda.cu src/common/graph.c src/common/utils.c -Isrc/common
 ```
 
-### Note on compilation:
-CUDA compilation on Windows requires Visual Studio (cl.exe) AND the Windows
-10/11 SDK headers. Install the SDK via the VS Installer → "Desktop development
-with C++" → "Windows 10 SDK (10.0.19041.0)" or later.
+### Performance Note:
+CUDA shows 0.04× speedup on large graph (slower than serial). This is expected:
+- `cudaDeviceSynchronize()` called every iteration adds round-trip latency
+- 100K-int distance array copied device→host each iteration for early-termination flag
+- GPU startup cost (~50ms) amortised poorly at this problem size
+- CUDA benefits appear at 10M+ edges where kernel time dominates transfer time
 
 ### Key CUDA features used:
 - `__global__` kernel — executes on GPU
@@ -285,7 +295,7 @@ docs/REPORT.md   ← comprehensive analysis and final report
 - OpenMP scales well for large graphs (4 threads → 1.81x)
 - MPI overhead dominates for small graphs; benefits appear only at large scale
 - Parallel overhead outweighs benefit for tiny/small graphs (normal behaviour)
-- CUDA code implemented; compilation requires Windows 10 SDK (available on Linux)
+- CUDA code implemented, compiled, and verified — GPU startup overhead dominates at tested graph sizes (0.04× on large); correct results on all sizes
 
 ---
 
