@@ -122,8 +122,10 @@ __global__ void relax_edges_kernel(int *d_src, int *d_dest, int *d_weight,
              */
             int old = atomicMin(&d_dist[v], new_dist);
             if (old > new_dist) {
-                /* We actually improved something */
-                *d_updated = 1;
+                /* Use atomicOr: multiple threads write this flag concurrently.
+                 * Non-atomic store (*d_updated=1) is undefined behavior in CUDA
+                 * even when all threads write the same value. */
+                atomicOr(d_updated, 1);
             }
         }
     }
@@ -244,10 +246,9 @@ int bellman_ford_cuda(Graph *graph, int source, int *dist) {
      * STEP 5: Main Bellman-Ford loop
      * ================================================================ */
     for (i = 0; i < V - 1; i++) {
-        /* Reset the update flag to 0 on GPU */
-        int zero = 0;
-        CUDA_CHECK(cudaMemcpy(d_updated, &zero, sizeof(int),
-                               cudaMemcpyHostToDevice));
+        /* Reset the update flag to 0 on GPU.
+         * cudaMemset is a device-only operation — no host-device transfer needed. */
+        CUDA_CHECK(cudaMemset(d_updated, 0, sizeof(int)));
 
         /*
          * Launch the GPU kernel.

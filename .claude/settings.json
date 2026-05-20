@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bin/bellman_ford_cuda.exe graphs/large.txt 0)",
+      "Bash(bin/gen_graph.exe 1000000 10000000 graphs/xxlarge.txt 42)",
+      "Bash(rm -f results/serial_distances.txt)",
+      "Bash(bin/bellman_ford_serial.exe graphs/xlarge.txt 0)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xlarge.txt 0 8)",
+      "Bash(bin/bellman_ford_cuda.exe graphs/xlarge.txt 0)",
+      "Bash(bin/bellman_ford_serial.exe graphs/xxlarge.txt 0)",
+      "Bash(bin/gen_graph.exe 1000000 10000000 graphs/xxlarge_pos.txt pos)",
+      "Bash(bin/bellman_ford_serial.exe graphs/xlarge_pos.txt 0)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xlarge_pos.txt 0 1)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xlarge_pos.txt 0 2)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xlarge_pos.txt 0 4)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xlarge_pos.txt 0 8)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 1 bin/bellman_ford_mpi.exe graphs/xlarge_pos.txt 0)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 2 bin/bellman_ford_mpi.exe graphs/xlarge_pos.txt 0)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 4 bin/bellman_ford_mpi.exe graphs/xlarge_pos.txt 0)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 1 bin/bellman_ford_hybrid.exe graphs/xlarge_pos.txt 0 8)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 2 bin/bellman_ford_hybrid.exe graphs/xlarge_pos.txt 0 4)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 4 bin/bellman_ford_hybrid.exe graphs/xlarge_pos.txt 0 2)",
+      "Bash(bin/bellman_ford_serial.exe graphs/xxlarge_pos.txt 0)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xxlarge_pos.txt 0 4)",
+      "Bash(bin/bellman_ford_openmp.exe graphs/xxlarge_pos.txt 0 8)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 4 bin/bellman_ford_mpi.exe graphs/xxlarge_pos.txt 0)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft MPI\\\\Bin\\\\mpiexec.exe\" -n 2 bin/bellman_ford_hybrid.exe graphs/xxlarge_pos.txt 0 4)"
+    ]
+  }
+}

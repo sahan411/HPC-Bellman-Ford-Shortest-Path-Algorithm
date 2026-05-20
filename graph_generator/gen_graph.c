@@ -87,10 +87,18 @@ int main(int argc, char *argv[]) {
     int E = atoi(argv[2]);      /* number of edges */
     char *filename = argv[3];   /* output file */
 
-    /* Optional random seed (for reproducible graphs) */
+    /* Optional random seed */
+    int pos_only = 0;           /* 0=mixed weights (default), 1=positive-only */
     if (argc >= 5) {
-        srand(atoi(argv[4]));
-        printf("Using random seed: %s\n", argv[4]);
+        if (argv[4][0] == 'p') {
+            /* "pos" flag: generate positive-weight-only graphs (small diameter, good for GPU) */
+            pos_only = 1;
+            srand(42);
+            printf("Mode: positive-weight-only (small diameter, GPU-friendly)\n");
+        } else {
+            srand(atoi(argv[4]));
+            printf("Using random seed: %s\n", argv[4]);
+        }
     } else {
         srand((unsigned int)time(NULL));
         printf("Using random seed based on current time\n");
@@ -157,44 +165,51 @@ int main(int argc, char *argv[]) {
     /* ================================================================
      * PHASE 1: Create a random spanning tree (V-1 edges)
      * ================================================================
-     * This guarantees the graph is connected.
+     * Two modes:
      *
-     * Method: Create a random permutation of vertices [0, 1, ..., V-1].
-     * Then connect perm[0]->perm[1], perm[1]->perm[2], etc.
-     * This creates a random path through all vertices (a spanning tree).
+     * Default (negative weights allowed): random PATH spanning tree.
+     *   perm[0]=0 → perm[1] → ... → perm[V-1].
+     *   Simple but creates large hop-count diameter.
      *
-     * Base weight: random [1, 10]
-     * Final weight = base + h[src] - h[dest]  (can be negative!)
+     * pos_only mode: random TREE spanning tree.
+     *   Each vertex i connects from a random vertex in [0, i-1].
+     *   This creates a tree with expected O(log V) depth, giving small
+     *   shortest-path diameter — necessary for CUDA to see few iterations.
      */
     printf("Phase 1: Creating spanning tree (%d edges)...\n", V - 1);
 
-    int *perm = (int *)malloc(V * sizeof(int));
-    if (perm == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed for permutation.\n");
-        return 1;
+    if (pos_only) {
+        /* Random tree: vertex i gets a random parent from [0, i-1].
+         * Expected depth O(log V). Good for GPU-friendly benchmarks. */
+        for (i = 1; i < V; i++) {
+            int parent = random_int(0, i - 1);
+            int base_w = random_int(21, 40);
+            src[edge_count]  = parent;
+            dest[edge_count] = i;
+            wt[edge_count]   = base_w + h[parent] - h[i];
+            edge_count++;
+        }
+    } else {
+        /* Random path: creates large diameter, good for testing negative cycles */
+        int *perm = (int *)malloc(V * sizeof(int));
+        if (perm == NULL) {
+            fprintf(stderr, "Error: Memory allocation failed for permutation.\n");
+            return 1;
+        }
+        for (i = 0; i < V; i++) perm[i] = i;
+        shuffle_array(perm + 1, V - 1);
+
+        for (i = 0; i < V - 1; i++) {
+            int u = perm[i];
+            int v = perm[i + 1];
+            int base_w = random_int(1, 10);
+            src[edge_count]  = u;
+            dest[edge_count] = v;
+            wt[edge_count]   = base_w + h[u] - h[v];
+            edge_count++;
+        }
+        free(perm);
     }
-
-    /* Initialize permutation: [0, 1, 2, ..., V-1] */
-    for (i = 0; i < V; i++) {
-        perm[i] = i;
-    }
-
-    /* Shuffle to get random order, but keep vertex 0 at position 0
-     * so the spanning tree is rooted at vertex 0 (our source vertex) */
-    shuffle_array(perm + 1, V - 1);  /* shuffle everything except perm[0] */
-
-    /* Connect consecutive vertices in the permutation */
-    for (i = 0; i < V - 1; i++) {
-        int u = perm[i];
-        int v = perm[i + 1];
-        int base_w = random_int(1, 10);  /* positive base weight */
-        src[edge_count]  = u;
-        dest[edge_count] = v;
-        wt[edge_count]   = base_w + h[u] - h[v];  /* Johnson's reweighting */
-        edge_count++;
-    }
-
-    free(perm);
 
     /* ================================================================
      * PHASE 2: Add remaining random edges (E - V + 1 edges)
@@ -238,11 +253,11 @@ int main(int argc, char *argv[]) {
             if (duplicate) continue;
         }
 
-        /* Assign weight using Johnson's reweighting */
-        int base_w = random_int(1, 30);  /* positive base weight */
+        /* pos_only: base_w > 20 guarantees weight > 0 */
+        int base_w = pos_only ? random_int(21, 50) : random_int(1, 30);
         src[edge_count]  = s;
         dest[edge_count] = d;
-        wt[edge_count]   = base_w + h[s] - h[d];  /* Johnson's reweighting */
+        wt[edge_count]   = base_w + h[s] - h[d];
         edge_count++;
     }
 
