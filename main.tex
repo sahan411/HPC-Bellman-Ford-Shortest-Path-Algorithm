@@ -1,0 +1,256 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{hyperref}
+
+% Formatting
+\setstretch{1.15}
+\titleformat{\section}{\large\bfseries}{\thesection.}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{1em}{}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+
+%----------------------------------------
+\begin{document}
+
+% --------- First Page (Cover Page) ---------
+\begin{titlepage}
+    \centering
+    \includegraphics[width=3cm]{Logo.jpeg}\par\vspace{1cm}
+    {\LARGE \textbf{Department of Electrical and Information Engineering}}\\[0.4cm]
+    {\Large \textbf{University of Ruhuna}}\\[1.5cm]
+    {\Large \textbf{Assessment 01}}\\[0.2cm]
+    {\large \textbf{Image Processing and Computer Vision}}\\[0.2cm]
+    {\large \textbf{EE7204 / EC7205}}\\[6cm]
+    
+   % Centered student and project info
+    {\large \textbf{Student Name}}\\[0.4cm]
+    {\large \textbf{Index Number}}\\[0.4cm]
+    {\large \textbf{Computer Engineering (CE) / Electrical Engineering (EE)}}\\[0.4cm]
+    {\large \textbf{Group Number}}\\[2cm]
+   
+    {\large \textbf{Submission date}}\\[2cm]
+    
+\end{titlepage}
+
+
+% --------- Table of Contents (Clickable) ---------
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Contents}
+\label{contents}
+\tableofcontents
+\clearpage
+
+% Marks 
+\section*{Obtained Marks Distribution}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{2.5} % increase row height
+\begin{tabular}{|c|l|c|}
+\hline
+\textbf{Q. No} & \textbf{Description} & \textbf{Marks} \\
+\hline
+1 & Preliminary Question 1 &  \\
+2 & Preliminary Question 2 & \\
+3 & Preliminary Question 3 &  \\
+4 & Preliminary Question 4 &  \\
+5 & Preliminary Question 5 &  \\
+6 & Preliminary Question 6 &  \\
+7 & Preliminary Question 7 &  \\
+8 & Preliminary Question 8 &  \\
+9 & Preliminary Question 9 &  \\
+10 & Preliminary Question 10 &  \\
+\hline
+11 & Practical Part (1 Question) &  \\
+\hline
+\multicolumn{2}{|c|}{\textbf{Total Marks}} & \textbf{} \\
+\hline
+\end{tabular}
+\caption{Marks allocation for preliminary and practical parts}
+\label{tab:marks_per_question}
+\end{table}
+
+\newpage{}
+
+
+
+% --------- Sections ---------
+
+\section{Preliminary work}
+
+In your report, include for \textbf{each question}:
+\begin{itemize}
+    \item Snapshot of the code
+    \item Results / outputs
+    \item Discussion / observations
+\end{itemize}
+
+If there are issues in your report, the \textbf{code will be checked} to award the marks.
+
+\subsection{Question 1}
+For an Example,
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.80\textwidth]{Code_01.png}
+    \caption{Code snapshot for Question 1}
+    \label{fig:q4_code}
+\end{figure}
+
+\subsubsection*{Results and Image Comparison}
+
+\begin{figure}[H]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.30\textwidth]{01_Original.png} &
+        \includegraphics[width=0.30\textwidth]{01_Zoom image with factor 0.2 .png} & \\
+        (a) Original Image &
+        (b) Scale image with factor 0.2
+    \end{tabular}
+    \caption{Comparison of original and processed images for Question 1}
+    \label{fig:q4_comparison}
+\end{figure}
+
+Or 
+
+\begin{figure}[H]
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[width=0.3\textwidth]{01_Original.png} &
+        \includegraphics[width=0.3\textwidth]{01_Zoom image with factor 0.2 .png} \\
+
+        (a) Original Image &
+        (b) Scaled image with factor 0.2 \\[6pt]
+
+        \includegraphics[width=0.3\textwidth]{01_Zoom image with factor 0.4.png} &
+        \includegraphics[width=0.3\textwidth]{01_Zoom image with factor 0.6.png} \\
+
+        (c) Scaled image with factor 0.4 &
+        (d) Scaled image with factor 0.6
+    \end{tabular}
+    \caption{Comparison of original and scaled images for Question 4}
+    \label{fig:q4_comparison}
+\end{figure}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 2}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 3}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 4}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 5}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 6}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 7}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 8}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 9}
+
+\hyperref[contents]{\small Back to Table of Contents}
+\subsection{Question 10}
+
+
+\hyperref[contents]{\small Back to Table of Contents}
+\newpage
+
+
+\section{Practical Work}
+\subsection{Introduction}
+(Maximum word limit: 50 words)
+
+
+\subsection{Flow Diagram of the image processing pipeline }
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.70\textwidth]{01_Original.png}
+    \caption{Flow Diagram}
+    \label{fig:q4_code}
+\end{figure}
+
+
+
+\hyperref[contents]{\small Back to Table of Contents}
+\newpage
+\section{Introduction and stepwise justification of the selected image processing pipeline.}
+(Maximum word limit: 100 words)
+
+
+
+\hyperref[contents]{\small Back to Table of Contents}
+\newpage
+\section{Expected Results for 10 Images}
+
+\begin{figure}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{ccc}
+
+\textbf{Original} & \textbf{Result} & \textbf{Ground Truth} \\[6pt]
+
+\includegraphics[width=0.28\textwidth]{01_Original.png} &
+\includegraphics[width=0.28\textwidth]{01_Original.png} &
+\includegraphics[width=0.28\textwidth]{01_Original.png} \\[10pt]
+
+% -------- Uncomment when images are available --------
+% \includegraphics[width=0.28\textwidth]{img2_original.png} &
+% \includegraphics[width=0.28\textwidth]{img2_result.png} &
+% \includegraphics[width=0.28\textwidth]{img2_gt.png} \\[10pt]
+%
+% \includegraphics[width=0.28\textwidth]{img3_original.png} &
+% \includegraphics[width=0.28\textwidth]{img3_result.png} &
+% \includegraphics[width=0.28\textwidth]{img3_gt.png} \\[10pt]
+%
+% ...
+%
+% \includegraphics[width=0.28\textwidth]{img10_original.png} &
+% \includegraphics[width=0.28\textwidth]{img10_result.png} &
+% \includegraphics[width=0.28\textwidth]{img10_gt.png}
+
+\end{tabular}
+\caption{Comparison of original images, obtained results, and ground truth for 10 test cases}
+\label{fig:results_vs_gt}
+\end{figure}
+
+
+
+
+
+\hyperref[contents]{\small Back to Table of Contents}
+\newpage
+\section{Results}
+Average results obtained from the 50-image validation set are presented in Table 1.
+
+
+\hyperref[contents]{\small Back to Table of Contents}
+\newpage
+\section{Discussion}
+{Maximum Words limits : 100 Words}
+
+
+
+\bibliographystyle{ieeetr} 
+\bibliography{references}
+Add the references if any.
+
+
+\end{document}
