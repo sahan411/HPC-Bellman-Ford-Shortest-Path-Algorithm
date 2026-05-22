@@ -119,12 +119,13 @@ __global__ void relax_edges_kernel(int *d_src, int *d_dest, int *d_weight,
              *   interfere between read and write).
              *
              * This is what makes CUDA Bellman-Ford safe without locks.
+             *
+             * FIXED: Always signal update when value changes.
+             * The old value returned tells us if an update actually happened.
              */
             int old = atomicMin(&d_dist[v], new_dist);
-            if (old > new_dist) {
-                /* Use atomicOr: multiple threads write this flag concurrently.
-                 * Non-atomic store (*d_updated=1) is undefined behavior in CUDA
-                 * even when all threads write the same value. */
+            if (old != new_dist) {
+                /* Value was actually changed, signal that we updated */
                 atomicOr(d_updated, 1);
             }
         }
