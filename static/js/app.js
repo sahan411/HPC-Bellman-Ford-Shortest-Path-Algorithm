@@ -275,4 +275,147 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // 6. Navigation and Benchmarks Loading
+    const navExecute = document.getElementById('nav-execute');
+    const navBenchmarks = document.getElementById('nav-benchmarks');
+    const viewExecute = document.getElementById('view-execute');
+    const viewBenchmarks = document.getElementById('view-benchmarks');
+
+    navExecute.addEventListener('click', (e) => {
+        e.preventDefault();
+        navExecute.classList.add('active');
+        navBenchmarks.classList.remove('active');
+        viewExecute.classList.remove('hidden');
+        viewBenchmarks.classList.add('hidden');
+    });
+
+    navBenchmarks.addEventListener('click', (e) => {
+        e.preventDefault();
+        navBenchmarks.classList.add('active');
+        navExecute.classList.remove('active');
+        viewBenchmarks.classList.remove('hidden');
+        viewExecute.classList.add('hidden');
+        loadBenchmarks();
+    });
+
+    let benchmarkData = [];
+    const benchmarkFilter = document.getElementById('benchmark-filter');
+
+    benchmarkFilter.addEventListener('change', () => {
+        renderBenchmarkTable(benchmarkFilter.value);
+    });
+
+    async function loadBenchmarks() {
+        const statusEl = document.getElementById('benchmark-status');
+        const tbody = document.getElementById('benchmark-table-body');
+        
+        // Don't reload if already loaded
+        if (benchmarkData.length > 0) {
+            renderBenchmarkTable(benchmarkFilter.value);
+            return;
+        }
+
+        statusEl.textContent = 'Loading data...';
+        try {
+            const response = await fetch('/api/benchmarks');
+            const data = await response.json();
+            
+            if (data.success) {
+                benchmarkData = data.data;
+                statusEl.textContent = `${benchmarkData.length} results loaded`;
+
+                // Populate filter dropdown
+                const uniqueGraphs = [...new Set(benchmarkData.map(r => r.graph || '-'))];
+                const sizeOrder = ['tiny', 'small', 'medium', 'large', 'xlarge_pos', 'xxlarge_pos'];
+                uniqueGraphs.sort((a, b) => {
+                    const idxA = sizeOrder.indexOf(a);
+                    const idxB = sizeOrder.indexOf(b);
+                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                    if (idxA !== -1) return -1;
+                    if (idxB !== -1) return 1;
+                    return a.localeCompare(b);
+                });
+
+                // Keep the "All Sizes" option and add the rest
+                benchmarkFilter.innerHTML = '<option value="all">All Sizes</option>';
+                uniqueGraphs.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g;
+                    opt.textContent = g.toUpperCase();
+                    benchmarkFilter.appendChild(opt);
+                });
+
+                renderBenchmarkTable('all');
+            } else {
+                statusEl.textContent = `Error: ${data.error}`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red)">Failed to load data: ${data.error}</td></tr>`;
+            }
+        } catch (err) {
+            console.error('Error loading benchmarks:', err);
+            statusEl.textContent = 'Network error';
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red)">Network error loading data</td></tr>`;
+        }
+    }
+
+    function renderBenchmarkTable(filterGraph) {
+        const tbody = document.getElementById('benchmark-table-body');
+        tbody.innerHTML = '';
+        
+        let filteredData = benchmarkData;
+        if (filterGraph !== 'all') {
+            filteredData = benchmarkData.filter(r => (r.graph || '-') === filterGraph);
+        }
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted)">No results found.</td></tr>`;
+            return;
+        }
+
+        // Group by graph size
+        const groupedData = {};
+        filteredData.forEach(row => {
+            const g = row.graph || '-';
+            if (!groupedData[g]) groupedData[g] = [];
+            groupedData[g].push(row);
+        });
+
+        const sizeOrder = ['tiny', 'small', 'medium', 'large', 'xlarge_pos', 'xxlarge_pos'];
+        const sortedGraphs = Object.keys(groupedData).sort((a, b) => {
+            const idxA = sizeOrder.indexOf(a);
+            const idxB = sizeOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+
+        sortedGraphs.forEach(graphSize => {
+            const headerTr = document.createElement('tr');
+            headerTr.className = 'benchmark-group-header';
+            headerTr.innerHTML = `<td colspan="4" style="background-color: rgba(47, 129, 247, 0.1); color: var(--accent-blue); padding: 10px 16px;">
+                <i class="fa-solid fa-folder-tree" style="margin-right: 8px;"></i> Graph Size: <strong style="text-transform: uppercase;">${graphSize}</strong>
+            </td>`;
+            tbody.appendChild(headerTr);
+
+            groupedData[graphSize].forEach(row => {
+                const tr = document.createElement('tr');
+                
+                let speedupClass = 'speedup-low';
+                const speedupVal = parseFloat(row.speedup);
+                if (!isNaN(speedupVal)) {
+                    if (speedupVal >= 2.0) speedupClass = 'speedup-high';
+                    else if (speedupVal > 1.0) speedupClass = 'speedup-med';
+                }
+
+                tr.innerHTML = `
+                    <td><span style="color: var(--accent-purple)">${(row.version || '').toUpperCase()}</span></td>
+                    <td>${row.config || '-'}</td>
+                    <td style="font-family: monospace">${row.time_sec || '-'}</td>
+                    <td class="${speedupClass}">${row.speedup && row.speedup !== 'N/A' ? row.speedup + 'x' : 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
 });

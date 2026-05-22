@@ -21,11 +21,11 @@
             </div>
             
             <nav class="nav-menu">
-                <a href="#" class="nav-item active">
+                <a href="#" class="nav-item active" id="nav-execute">
                     <i class="fa-solid fa-play"></i>
                     <span>Execute</span>
                 </a>
-                <a href="#" class="nav-item tooltip-trigger" title="Coming soon">
+                <a href="#" class="nav-item" id="nav-benchmarks">
                     <i class="fa-solid fa-chart-line"></i>
                     <span>Benchmarks</span>
                 </a>
@@ -49,7 +49,7 @@
                 </div>
             </header>
 
-            <div class="dashboard-grid">
+            <div class="dashboard-grid" id="view-execute">
                 
                 <!-- Configuration Panel -->
                 <section class="card config-panel">
@@ -161,6 +161,42 @@
                     <div id="graph-network"></div>
                 </section>
 
+            </div>
+
+            <!-- Benchmarks View -->
+            <div class="benchmarks-view hidden" id="view-benchmarks">
+                <section class="card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-chart-bar"></i> Performance Benchmarks</h3>
+                        <div class="status-indicator">
+                            <span id="benchmark-status" style="color: var(--text-muted)">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="card-header" style="background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 16px; padding: 12px 24px;">
+                        <label for="benchmark-filter" style="margin: 0; font-size: 0.9rem;">Filter by Graph:</label>
+                        <div class="custom-select-wrapper" style="width: 200px;">
+                            <select id="benchmark-filter">
+                                <option value="all">All Sizes</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-icon"></i>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="benchmark-table">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Configuration</th>
+                                    <th>Execution Time (s)</th>
+                                    <th>Speedup</th>
+                                </tr>
+                            </thead>
+                            <tbody id="benchmark-table-body">
+                                <!-- Data injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </main>
     </div>

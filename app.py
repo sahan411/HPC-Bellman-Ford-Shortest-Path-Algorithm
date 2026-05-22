@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import os
 import subprocess
 import glob
+import csv
 
 app = Flask(__name__)
 
@@ -198,6 +199,23 @@ def run_algorithm():
     except subprocess.TimeoutExpired:
         process.kill()
         return jsonify({"success": False, "error": "Execution timed out (60s limit)"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/benchmarks', methods=['GET'])
+def get_benchmarks():
+    """Reads the benchmark results CSV and returns it as JSON"""
+    csv_path = os.path.join("results", "benchmark_results.csv")
+    if not os.path.exists(csv_path):
+        return jsonify({"success": False, "error": "Benchmark results not found."})
+
+    try:
+        results = []
+        with open(csv_path, mode='r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                results.append(row)
+        return jsonify({"success": True, "data": results})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
