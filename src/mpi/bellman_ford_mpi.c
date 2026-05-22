@@ -138,8 +138,9 @@ int main(int argc, char *argv[]) {
         MPI_Allreduce(next_dist, dist, V, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
         
         /* Merge updated flags to determine early termination globally.
-         * MPI_MAX essentially acts as a logical OR. */
-        MPI_Allreduce(&local_updated, &global_updated, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+         * FIXED: Changed from MPI_MAX to MPI_LOR for semantic correctness.
+         * MPI_LOR is the proper logical OR operation for boolean flags. */
+        MPI_Allreduce(&local_updated, &global_updated, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
         if (!global_updated) {
             early_stop_iter = i + 1;
