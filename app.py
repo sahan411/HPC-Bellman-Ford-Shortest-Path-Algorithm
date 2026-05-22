@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify
 import os
 import subprocess
 import glob
+import psutil
+import multiprocessing
 
 app = Flask(__name__)
 
@@ -12,6 +14,25 @@ GRAPHS_DIR = "graphs"
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/system-resources', methods=['GET'])
+def get_system_resources():
+    """Returns system resource information"""
+    try:
+        cpu_count = multiprocessing.cpu_count()
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory()
+        
+        return jsonify({
+            "success": True,
+            "cpu_cores": cpu_count,
+            "cpu_percent": cpu_percent,
+            "memory_total_gb": round(memory.total / (1024**3), 2),
+            "memory_available_gb": round(memory.available / (1024**3), 2),
+            "memory_percent": memory.percent
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/graphs', methods=['GET'])
 def get_graphs():
@@ -99,107 +120,97 @@ def run_algorithm():
     # Optional parameters
     threads = data.get('threads', 4)
     processes = data.get('processes', 4)
+    
+    # Validate against system resources
+    cpu_count = multiprocessing.cpu_count()
+    warnings = []
+    
+    if threads > cpu_count:
+        warnings.append(f"Warning: Requesting {threads} threads but system has {cpu_count} CPU cores. Performance may be suboptimal.")
+        threads = cpu_count
+    
+    if processes > cpu_count:
+        warnings.append(f"Warning: Requesting {processes} processes but system has {cpu_count} CPU cores. Performance may be suboptimal.")
+        processes = cpu_count
 
     if not algorithm or not graph_file:
         return jsonify({"success": False, "error": "Missing algorithm or graph_file"})
 
-    graph_path = os.path.join(GRAPHS_DIR, graph_file)
+    graph_path = os.path.abspath(os.path.join(GRAPHS_DIR, graph_file))
     if not os.path.exists(graph_path):
         return jsonify({"success": False, "error": f"Graph file {graph_file} not found."})
 
-    executable = ""
-    command = []
-    env = os.environ.copy()
-
+    process = None
     try:
-        # Detect correct WSL distribution (avoid docker-desktop)
-        distro_arg = []
-        try:
-            wsl_list = subprocess.check_output(["wsl", "-l", "-q"], text=True, encoding='utf-16le', errors='ignore')
-            for line in wsl_list.splitlines():
-                distro = line.strip('\x00').strip()
-                if distro and "docker" not in distro.lower():
-                    distro_arg = ["-d", distro]
-                    break
-        except Exception:
-            pass
-
-        # Convert Windows paths to WSL format (e.g., F:\HPC\... to /mnt/f/HPC/...)
-        def wsl_path(win_path):
-            if not win_path: return win_path
-            path = win_path.replace('\\', '/')
-            if ':' in path:
-                drive, rest = path.split(':', 1)
-                path = f"/mnt/{drive.lower()}{rest}"
-            return path
-
-        wsl_graph_path = wsl_path(os.path.abspath(graph_path))
-        wsl_bin_dir = wsl_path(os.path.abspath(BIN_DIR))
-
-        if algorithm == 'serial':
-            executable = f"{wsl_bin_dir}/bellman_ford_serial"
-            command = ["wsl"] + distro_arg + [executable, wsl_graph_path, str(source)]
+        import sys
+        python_exe = sys.executable
         
-        elif algorithm == 'openmp':
-            executable = f"{wsl_bin_dir}/bellman_ford_openmp"
-            command = ["wsl"] + distro_arg + ["bash", "-c", f"export OMP_NUM_THREADS={threads} && {executable} {wsl_graph_path} {source}"]
-            
-        elif algorithm == 'mpi':
-            executable = f"{wsl_bin_dir}/bellman_ford_mpi"
-            command = ["wsl"] + distro_arg + ["mpiexec", "-np", str(processes), executable, wsl_graph_path, str(source)]
-            
-        elif algorithm == 'hybrid':
-            executable = f"{wsl_bin_dir}/bellman_ford_hybrid"
-            command = ["wsl"] + distro_arg + ["bash", "-c", f"export OMP_NUM_THREADS={threads} && mpiexec -np {processes} {executable} {wsl_graph_path} {source}"]
-            
-        elif algorithm == 'cuda':
-            executable = f"{wsl_bin_dir}/bellman_ford_cuda"
-            command = ["wsl"] + distro_arg + [executable, wsl_graph_path, str(source)]
-            
-        else:
+        # Map algorithm to implementation
+        script_map = {
+            'serial': 'bellman_ford_serial.py',
+            'openmp': 'bellman_ford_openmp.py',
+            'mpi': 'bellman_ford_mpi.py',
+            'hybrid': 'bellman_ford_hybrid.py',
+            'cuda': 'bellman_ford_cuda.py'
+        }
+        
+        if algorithm not in script_map:
             return jsonify({"success": False, "error": f"Unknown algorithm: {algorithm}"})
-
-        # Remove direct OS binary checks as Windows won't natively see Linux binaries without extension correctly
-        # We rely on WSL returning an error if the binary is missing
-
+        
+        script_name = script_map[algorithm]
+        script_path = os.path.abspath(os.path.join(BIN_DIR, script_name))
+        
+        if not os.path.exists(script_path):
+            return jsonify({"success": False, "error": f"Implementation not found: {script_name}"})
+        
+        # Build command based on algorithm
+        if algorithm == 'openmp':
+            command = [python_exe, script_path, graph_path, str(source), str(threads)]
+        else:
+            command = [python_exe, script_path, graph_path, str(source)]
+        
+        # Run the algorithm
         process = subprocess.Popen(
             command,
-            env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
+            cwd=os.path.abspath('.')
         )
         
-        stdout_data, stderr_data = process.communicate(timeout=60) # 60 second timeout
+        try:
+            stdout_data, stderr_data = process.communicate(timeout=60)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return jsonify({"success": False, "error": "Execution timed out (60s limit)"})
         
-        if process.returncode != 0 and stderr_data:
-             return jsonify({
-                "success": False, 
-                "error": f"Execution failed with code {process.returncode}",
-                "stderr": stderr_data,
-                "stdout": stdout_data
-            })
-
-        # Basic parsing to extract execution time out of standard output
+        # Parse execution time
         time_elapsed = None
         for line in stdout_data.split('\n'):
-            if "Execution time" in line:
+            if "Execution time:" in line:
                 try:
-                    time_elapsed = line.split(':')[1].strip().split(' ')[0]
+                    time_elapsed = line.split(':')[1].strip().split()[0]
                 except:
                     pass
+        
+        if process.returncode != 0:
+            return jsonify({
+                "success": False,
+                "error": f"Execution failed with code {process.returncode}",
+                "stdout": stdout_data,
+                "stderr": stderr_data
+            })
         
         return jsonify({
             "success": True,
             "stdout": stdout_data,
-            "time": time_elapsed
+            "time": time_elapsed,
+            "warnings": warnings if warnings else None
         })
 
-    except subprocess.TimeoutExpired:
-        process.kill()
-        return jsonify({"success": False, "error": "Execution timed out (60s limit)"})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        import traceback
+        return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()})
 
 if __name__ == '__main__':
     # Ensure graphs and bin directories exist, or show warning
@@ -208,4 +219,4 @@ if __name__ == '__main__':
     if not os.path.exists(GRAPHS_DIR):
         print(f"Warning: '{GRAPHS_DIR}' directory not found. Generate graphs first.")
         
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=False, host='127.0.0.1', port=5000)
