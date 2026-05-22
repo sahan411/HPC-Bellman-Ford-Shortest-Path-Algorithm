@@ -299,11 +299,11 @@ Test Configuration:
     \hline
     \textbf{Implementation} & \textbf{Time (seconds)} & \textbf{Relative Speed} \\
     \hline
-    Serial (Baseline) & 0.000016 & 1.0x \\
-    OpenMP (4 threads) & 0.000017 & 1.06x \\
-    MPI (4 processes) & 0.000025 & 1.56x \\
-    CUDA (GPU) & 0.000032 & 2.0x \\
-    Hybrid (4P x 4T) & 0.000046 & 2.88x \\
+    Serial (Baseline) & 0.000000 & 1.0x \\
+    OpenMP (4 threads) & 0.000000 & 1.00x \\
+    MPI (4 processes) & 0.000000 & 1.00x \\
+    CUDA (GPU) & 0.000000 & 1.00x \\
+    Hybrid (4P x 4T) & 0.000000 & 1.00x \\
     \hline
     \end{tabular}
     \caption{Execution time comparison across implementations}
@@ -328,10 +328,10 @@ Test Configuration:
     \hline
     \textbf{Graph Size} & \textbf{Serial (s)} & \textbf{OpenMP (s)} & \textbf{Speedup} \\
     \hline
-    Tiny (5V, 8E) & 0.000016 & 0.000017 & 0.94x \\
-    Small (20V, 50E) & 0.000042 & 0.000038 & 1.11x \\
-    Medium (50V, 150E) & 0.000156 & 0.000089 & 1.75x \\
-    Large (100V, 500E) & 0.027280 & 0.008421 & 3.24x \\
+    Tiny (5V, 8E) & 0.000000 & 0.000000 & 1.00x \\
+    Small (20V, 50E) & 0.000000 & 0.000000 & 1.00x \\
+    Medium (50V, 150E) & 0.000997 & 0.002017 & 2.02x \\
+    Large (100V, 500E) & 0.020847 & 0.013053 & 0.63x \\
     \hline
     \end{tabular}
     \caption{Scalability: OpenMP speedup improves with graph size}
