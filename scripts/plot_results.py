@@ -46,13 +46,13 @@ VERSION_COLORS = {
     "openmp":  "#2196F3",  # blue
     "mpi":     "#4CAF50",  # green
     "hybrid":  "#FF9800",  # orange
-    "cuda":    "#9C27B0",  # purple
+    "mpi_cuda": "#9C27B0", # purple
 }
 
 # Order for the legend
-VERSION_ORDER = ["serial", "openmp", "mpi", "hybrid", "cuda"]
+VERSION_ORDER = ["serial", "openmp", "mpi", "hybrid", "mpi_cuda"]
 
-GRAPH_SIZES = ["tiny", "small", "medium", "large"]
+GRAPH_SIZES = ["tiny", "small", "medium", "large", "xlarge_pos", "xxlarge_pos"]
 
 
 def load_csv(csv_file):
@@ -84,7 +84,7 @@ def plot_execution_time(groups, output_dir):
     if not HAS_MATPLOTLIB:
         return
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(3, 2, figsize=(16, 14))
     fig.suptitle("Execution Time by Version and Graph Size",
                   fontsize=14, fontweight="bold")
 
@@ -156,7 +156,7 @@ def plot_speedup(groups, output_dir):
     if not HAS_MATPLOTLIB:
         return
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(3, 2, figsize=(16, 14))
     fig.suptitle("Speedup vs Serial Baseline",
                   fontsize=14, fontweight="bold")
 

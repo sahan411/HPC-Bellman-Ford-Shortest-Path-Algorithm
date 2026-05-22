@@ -39,6 +39,8 @@ GRAPHS = [
     ("small",  "graphs/small.txt"),
     ("medium", "graphs/medium.txt"),
     ("large",  "graphs/large.txt"),
+    ("xlarge_pos", "graphs/xlarge_pos.txt"),
+    ("xxlarge_pos", "graphs/xxlarge_pos.txt"),
 ]
 
 # Number of repetitions per test (take the best time to reduce noise)
@@ -51,10 +53,24 @@ SOURCE = 0
 OMP_THREADS = [1, 2, 4, 8]
 
 # MPI process counts to test
-MPI_PROCS = [1, 2, 4]
+MPI_PROCS = [1, 2, 4, 8]
+
+# MPI+CUDA process counts. These require one or more CUDA-capable GPUs.
+# On this laptop, all ranks share the single visible GPU.
+MPI_CUDA_PROCS = [2, 4]
 
 # Hybrid: (mpi_procs, omp_threads) combinations
-HYBRID_CONFIGS = [(1, 8), (2, 4), (4, 2)]
+HYBRID_CONFIGS = [
+    (1, 8),
+    (2, 4),
+    (4, 2),
+    (8, 1),
+    # Extra layouts to test whether using more total workers improves runtime.
+    # These may oversubscribe an 8-logical-core laptop, so they are reported
+    # separately in the analysis instead of treated as automatically better.
+    (2, 8),
+    (4, 4),
+]
 
 
 def run_cmd(cmd, env=None, timeout=300):
@@ -74,6 +90,9 @@ def run_cmd(cmd, env=None, timeout=300):
 
         # Look for "Execution time : X.XXXXXX seconds" in output
         match = re.search(r"Execution time\s*:\s*([\d.]+)\s*seconds", output)
+        if "VERIFICATION FAILED" in output:
+            return False, 0.0, output
+
         if match:
             return True, float(match.group(1)), output
         else:
@@ -122,9 +141,10 @@ def run_hybrid(graph_file, source, procs, threads):
     return run_cmd(cmd, env=env)
 
 
-def run_cuda(graph_file, source):
-    """Run CUDA version."""
-    cmd = [r".\bin\bellman_ford_cuda.exe", graph_file, str(source)]
+def run_mpi_cuda(graph_file, source, procs):
+    """Run MPI+CUDA version with specified MPI process count."""
+    cmd = [MPIEXEC, "-n", str(procs),
+           r".\bin\bellman_ford_mpi_cuda.exe", graph_file, str(source)]
     return run_cmd(cmd)
 
 
@@ -245,20 +265,21 @@ def main():
             })
 
         # ----------------------------------------------------------
-        # Step 5: CUDA
+        # Step 5: MPI+CUDA
         # ----------------------------------------------------------
-        print(f"\n[CUDA]")
-        t = best_of(run_cuda, graph_file, SOURCE, reps=REPS)
-        sp = speedup(serial_time, t)
-        status = f"{t:.6f}s  speedup={sp:.2f}x" if t else "FAILED / not built"
-        print(f"  GPU: {status}")
-        rows.append({
-            "graph": graph_name,
-            "version": "cuda",
-            "config": "GPU",
-            "time_sec": f"{t:.6f}" if t else "N/A",
-            "speedup": f"{sp:.2f}" if sp else "N/A"
-        })
+        print(f"\n[MPI+CUDA]")
+        for procs in MPI_CUDA_PROCS:
+            t = best_of(run_mpi_cuda, graph_file, SOURCE, procs, reps=REPS)
+            sp = speedup(serial_time, t)
+            status = f"{t:.6f}s  speedup={sp:.2f}x" if t else "FAILED"
+            print(f"  {procs:2d} processes + CUDA: {status}")
+            rows.append({
+                "graph": graph_name,
+                "version": "mpi_cuda",
+                "config": f"{procs} procs + CUDA",
+                "time_sec": f"{t:.6f}" if t else "N/A",
+                "speedup": f"{sp:.2f}" if sp else "N/A"
+            })
 
     # ----------------------------------------------------------
     # Save results to CSV

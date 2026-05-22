@@ -11,6 +11,7 @@
 #   make mpi           - Build MPI (distributed memory) version
 #   make hybrid        - Build Hybrid (MPI + OpenMP) version
 #   make cuda          - Build CUDA (GPU) version
+#   make mpi_cuda      - Build MPI+CUDA version
 #   make all           - Build everything
 #   make clean         - Remove all compiled files
 #
@@ -37,6 +38,7 @@ OPENMP_DIR   = src/openmp
 MPI_DIR      = src/mpi
 HYBRID_DIR   = src/hybrid
 CUDA_DIR     = src/cuda
+MPI_CUDA_DIR = src/mpi_cuda
 COMMON_DIR   = src/common
 GEN_DIR      = graph_generator
 BIN_DIR      = bin
@@ -53,7 +55,7 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 # ---- Build everything ----
-all: serial openmp mpi hybrid cuda
+all: serial openmp mpi hybrid mpi_cuda
 	@echo ""
 	@echo "============================================"
 	@echo "  All versions built successfully!"
@@ -100,6 +102,13 @@ cuda: $(BIN_DIR)
 		-I$(COMMON_DIR)
 	@echo "[OK] CUDA version built: $(BIN_DIR)/bellman_ford_cuda"
 
+# ---- MPI + CUDA Version (distributed GPU-assisted parallelism) ----
+mpi_cuda: $(BIN_DIR)
+	$(NVCC) -O2 -o $(BIN_DIR)/bellman_ford_mpi_cuda \
+		$(MPI_CUDA_DIR)/bellman_ford_mpi_cuda.cu $(COMMON_SRC) \
+		-I$(COMMON_DIR)
+	@echo "[OK] MPI+CUDA version built: $(BIN_DIR)/bellman_ford_mpi_cuda"
+
 # ---- Clean up compiled files ----
 clean:
 	rm -rf $(BIN_DIR)
@@ -114,9 +123,10 @@ help:
 	@echo "  make mpi      - Build MPI version"
 	@echo "  make hybrid   - Build Hybrid (MPI+OpenMP) version"
 	@echo "  make cuda     - Build CUDA (GPU) version"
+	@echo "  make mpi_cuda - Build MPI+CUDA version"
 	@echo "  make all      - Build all versions"
 	@echo "  make clean    - Remove compiled files"
 	@echo "  make help     - Show this help message"
 	@echo ""
 
-.PHONY: all serial openmp mpi hybrid cuda gen_graph clean help
+.PHONY: all serial openmp mpi hybrid cuda mpi_cuda gen_graph clean help
