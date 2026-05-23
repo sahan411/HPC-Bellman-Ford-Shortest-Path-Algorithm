@@ -48,13 +48,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 threadsInput.value = defaultValue;
                 processesInput.value = defaultValue;
                 
+                let gpuText = '- GPU: Not detected\n';
+                if (data.gpu && data.gpu.available && data.gpu.gpus.length > 0) {
+                    gpuText = data.gpu.gpus.map(gpu =>
+                        `- GPU ${gpu.index}: ${gpu.name} (${gpu.memory_used_mb}/${gpu.memory_total_mb} MB, ${gpu.utilization_percent}% util)`
+                    ).join('\n') + '\n';
+                } else if (data.gpu && data.gpu.error) {
+                    gpuText = `- GPU: ${data.gpu.error}\n`;
+                }
+
+                const memoryText = data.memory_total_gb
+                    ? `- Memory: ${data.memory_available_gb}/${data.memory_total_gb} GB available\n- Memory Usage: ${data.memory_percent}%\n`
+                    : '- Memory: psutil not installed\n';
+
                 // Add system info to console
-                consoleOutput.textContent = 
+                consoleOutput.textContent =
                     `System Resources Detected:\n` +
                     `- CPU Cores: ${data.cpu_cores}\n` +
-                    `- CPU Usage: ${data.cpu_percent}%\n` +
-                    `- Memory: ${data.memory_available_gb}/${data.memory_total_gb} GB available\n` +
-                    `- Memory Usage: ${data.memory_percent}%\n\n` +
+                    `- CPU Usage: ${data.cpu_percent ?? 'N/A'}%\n` +
+                    memoryText +
+                    gpuText + `\n` +
                     `Ready for execution...`;
                 
                 console.log('System resources loaded:', data);
@@ -121,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFormVisibility() {
         const alg = algorithmSelect.value;
         const needsThreads = ['openmp', 'hybrid'].includes(alg);
-        const needsProcs = ['mpi', 'hybrid'].includes(alg);
+        const needsProcs = ['mpi', 'hybrid', 'mpi_cuda'].includes(alg);
 
         if (needsThreads || needsProcs) {
             parallelParams.classList.remove('hidden');
@@ -244,7 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
             graph_file: graphSelect.value,
             source: parseInt(document.getElementById('source').value),
             threads: parseInt(document.getElementById('threads').value),
-            processes: parseInt(document.getElementById('processes').value)
+            processes: parseInt(document.getElementById('processes').value),
+            timeout: parseInt(document.getElementById('timeout').value)
         };
 
         // Update UI for loading state
@@ -277,8 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Display warnings if any
                 let output = '';
+                if (data.command && data.command.length > 0) {
+                    output += `COMMAND:\n${data.command.join(' ')}\n\n---\n\n`;
+                }
                 if (data.warnings && data.warnings.length > 0) {
-                    output += '⚠️ WARNINGS:\n';
+                    output += 'WARNINGS:\n';
                     data.warnings.forEach(warning => {
                         output += `  - ${warning}\n`;
                     });
@@ -309,11 +326,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 let algName = algorithmSelect.options[algorithmSelect.selectedIndex].text;
                 if (payload.algorithm === 'openmp') algName += ` (${payload.threads} threads)`;
                 if (payload.algorithm === 'mpi') algName += ` (${payload.processes} procs)`;
-                if (payload.algorithm === 'hybrid') algName += ` (${payload.processes}P × ${payload.threads}T)`;
+                if (payload.algorithm === 'hybrid') algName += ` (${payload.processes}P x ${payload.threads}T)`;
+                if (payload.algorithm === 'mpi_cuda') algName += ` (${payload.processes} procs + GPU)`;
                 
                 statAlg.textContent = algName;
             } else {
-                throw new Error(data.error);
+                statusDot.className = 'dot error';
+                statusText.textContent = 'Execution Failed';
+
+                let output = `ERROR: ${data.error || 'Execution failed'}\n`;
+                if (data.command && data.command.length > 0) {
+                    output += `\nCOMMAND:\n${data.command.join(' ')}\n`;
+                }
+                if (data.stdout) {
+                    output += `\nSTDOUT:\n${data.stdout}\n`;
+                }
+                if (data.stderr) {
+                    output += `\nSTDERR:\n${data.stderr}\n`;
+                }
+                consoleOutput.textContent = output;
             }
 
         } catch (error) {

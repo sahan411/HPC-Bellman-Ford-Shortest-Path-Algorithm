@@ -29,5 +29,8 @@ desktop.ini
 *~
 
 # ---- Temporary files ----
+__pycache__/
+*.pyc
 *.tmp
 *.log
+.ui_runs/

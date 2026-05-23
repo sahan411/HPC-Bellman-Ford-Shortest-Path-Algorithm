@@ -68,7 +68,7 @@
                                     <option value="openmp">OpenMP (Shared Memory)</option>
                                     <option value="mpi">MPI (Distributed Memory)</option>
                                     <option value="hybrid">Hybrid (MPI + OpenMP)</option>
-                                    <option value="cuda">CUDA (GPU)</option>
+                                    <option value="mpi_cuda">MPI + CUDA (GPU)</option>
                                 </select>
                                 <i class="fa-solid fa-chevron-down select-icon"></i>
                             </div>
@@ -91,6 +91,10 @@
                             <div class="form-group half">
                                 <label for="source">Source Vertex</label>
                                 <input type="number" id="source" name="source" value="0" min="0" required>
+                            </div>
+                            <div class="form-group half">
+                                <label for="timeout">Timeout (s)</label>
+                                <input type="number" id="timeout" name="timeout" value="300" min="5" max="3600" required>
                             </div>
                         </div>
 
