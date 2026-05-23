@@ -7,6 +7,7 @@
 #
 # Quick Start:
 #   make serial        - Build serial version + graph generator
+#   make posix         - Build POSIX pthreads version
 #   make openmp        - Build OpenMP (shared memory) version
 #   make mpi           - Build MPI (distributed memory) version
 #   make hybrid        - Build Hybrid (MPI + OpenMP) version
@@ -34,6 +35,7 @@ OMP_FLAG = -fopenmp
 
 # ---- Directories ----
 SERIAL_DIR   = src/serial
+POSIX_DIR    = src/posix
 OPENMP_DIR   = src/openmp
 MPI_DIR      = src/mpi
 HYBRID_DIR   = src/hybrid
@@ -55,7 +57,7 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 # ---- Build everything ----
-all: serial openmp mpi hybrid mpi_cuda
+all: serial posix openmp mpi hybrid mpi_cuda
 	@echo ""
 	@echo "============================================"
 	@echo "  All versions built successfully!"
@@ -80,6 +82,13 @@ openmp: $(BIN_DIR)
 		$(OPENMP_DIR)/bellman_ford_openmp.c $(COMMON_SRC) \
 		-I$(COMMON_DIR)
 	@echo "[OK] OpenMP version built: $(BIN_DIR)/bellman_ford_openmp"
+
+# ---- POSIX Threads Version (manual shared memory parallelism) ----
+posix: $(BIN_DIR)
+	$(CC) $(CFLAGS) -pthread -o $(BIN_DIR)/bellman_ford_posix \
+		$(POSIX_DIR)/bellman_ford_posix.c $(COMMON_SRC) \
+		-I$(COMMON_DIR)
+	@echo "[OK] POSIX pthreads version built: $(BIN_DIR)/bellman_ford_posix"
 
 # ---- MPI Version (distributed memory parallelism) ----
 mpi: $(BIN_DIR)
@@ -119,6 +128,7 @@ help:
 	@echo ""
 	@echo "Bellman-Ford HPC Project - Build Targets:"
 	@echo "  make serial   - Build serial version + graph generator"
+	@echo "  make posix    - Build POSIX pthreads version"
 	@echo "  make openmp   - Build OpenMP version"
 	@echo "  make mpi      - Build MPI version"
 	@echo "  make hybrid   - Build Hybrid (MPI+OpenMP) version"
@@ -129,4 +139,4 @@ help:
 	@echo "  make help     - Show this help message"
 	@echo ""
 
-.PHONY: all serial openmp mpi hybrid cuda mpi_cuda gen_graph clean help
+.PHONY: all serial posix openmp mpi hybrid cuda mpi_cuda gen_graph clean help

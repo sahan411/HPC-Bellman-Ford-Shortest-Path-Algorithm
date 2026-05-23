@@ -34,3 +34,4 @@ __pycache__/
 *.tmp
 *.log
 .ui_runs/
+.ui_server.*.log
