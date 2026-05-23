@@ -540,3 +540,59 @@ input:focus, select:focus {
     color: var(--text-muted);
 }
 
+/* ----------------- Reports View ----------------- */
+.reports-view {
+    animation: fadeIn var(--transition-speed) ease-out;
+}
+
+.report-list {
+    display: grid;
+    gap: 16px;
+    padding: 24px;
+}
+
+.report-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.report-item h4 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.report-item p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.report-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    background-color: var(--accent-blue);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.report-link.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    background-color: var(--border-color);
+}
+
+.report-error {
+    color: var(--accent-red);
+    padding: 24px;
+}
+

@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Handle dynamic form inputs based on algorithm selection
     function updateFormVisibility() {
         const alg = algorithmSelect.value;
-        const needsThreads = ['openmp', 'hybrid'].includes(alg);
+        const needsThreads = ['posix', 'openmp', 'hybrid'].includes(alg);
         const needsProcs = ['mpi', 'hybrid', 'mpi_cuda'].includes(alg);
 
         if (needsThreads || needsProcs) {
@@ -324,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 statTime.textContent = timeVal ? `${timeVal} s` : "N/A";
                 
                 let algName = algorithmSelect.options[algorithmSelect.selectedIndex].text;
+                if (payload.algorithm === 'posix') algName += ` (${payload.threads} threads)`;
                 if (payload.algorithm === 'openmp') algName += ` (${payload.threads} threads)`;
                 if (payload.algorithm === 'mpi') algName += ` (${payload.processes} procs)`;
                 if (payload.algorithm === 'hybrid') algName += ` (${payload.processes}P x ${payload.threads}T)`;
@@ -366,24 +367,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. Navigation and Benchmarks Loading
     const navExecute = document.getElementById('nav-execute');
     const navBenchmarks = document.getElementById('nav-benchmarks');
+    const navReports = document.getElementById('nav-reports');
     const viewExecute = document.getElementById('view-execute');
     const viewBenchmarks = document.getElementById('view-benchmarks');
+    const viewReports = document.getElementById('view-reports');
 
     navExecute.addEventListener('click', (e) => {
         e.preventDefault();
         navExecute.classList.add('active');
         navBenchmarks.classList.remove('active');
+        navReports.classList.remove('active');
         viewExecute.classList.remove('hidden');
         viewBenchmarks.classList.add('hidden');
+        viewReports.classList.add('hidden');
     });
 
     navBenchmarks.addEventListener('click', (e) => {
         e.preventDefault();
         navBenchmarks.classList.add('active');
         navExecute.classList.remove('active');
+        navReports.classList.remove('active');
         viewBenchmarks.classList.remove('hidden');
         viewExecute.classList.add('hidden');
+        viewReports.classList.add('hidden');
         loadBenchmarks();
+    });
+
+    navReports.addEventListener('click', (e) => {
+        e.preventDefault();
+        navReports.classList.add('active');
+        navExecute.classList.remove('active');
+        navBenchmarks.classList.remove('active');
+        viewReports.classList.remove('hidden');
+        viewExecute.classList.add('hidden');
+        viewBenchmarks.classList.add('hidden');
+        loadReports();
     });
 
     let benchmarkData = [];
@@ -504,5 +522,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.appendChild(tr);
             });
         });
+    }
+
+    let reportsLoaded = false;
+
+    async function loadReports() {
+        if (reportsLoaded) {
+            return;
+        }
+
+        const statusEl = document.getElementById('report-status');
+        const listEl = document.getElementById('report-list');
+        statusEl.textContent = 'Loading reports...';
+        listEl.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/reports');
+            const data = await response.json();
+
+            if (!data.success) {
+                statusEl.textContent = `Error: ${data.error}`;
+                return;
+            }
+
+            data.reports.forEach(report => {
+                const item = document.createElement('div');
+                item.className = 'report-item';
+                const statusText = report.available ? 'Open' : 'Missing';
+                const disabledClass = report.available ? '' : ' disabled';
+                item.innerHTML = `
+                    <div>
+                        <h4>${report.title}</h4>
+                        <p>${report.description}</p>
+                    </div>
+                    <a class="report-link${disabledClass}" href="${report.url}" target="_blank" rel="noopener">
+                        <span>${statusText}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                `;
+                listEl.appendChild(item);
+            });
+
+            reportsLoaded = true;
+            statusEl.textContent = `${data.reports.length} reports`;
+        } catch (err) {
+            console.error('Error loading reports:', err);
+            statusEl.textContent = 'Network error';
+            listEl.innerHTML = `<div class="report-error">Could not load report links.</div>`;
+        }
     }
 });

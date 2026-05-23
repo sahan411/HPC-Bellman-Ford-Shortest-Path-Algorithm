@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 import csv
 import glob
 import multiprocessing
@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import tempfile
+from pathlib import Path
 
 try:
     import psutil
@@ -19,9 +20,23 @@ BIN_DIR = "bin"
 GRAPHS_DIR = "graphs"
 RESULTS_DIR = "results"
 MPIEXEC = r"C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"
+REPORT_FILES = {
+    "markdown": {
+        "title": "Markdown Project Report",
+        "path": os.path.join("docs", "REPORT.md"),
+        "description": "Main concise report used by the UI and benchmark tables.",
+    },
+    "latex_pdf": {
+        "title": "LaTeX Analysis PDF",
+        "path": os.path.join("reports", "analysis", "ANALYSIS_REPORT.pdf"),
+        "description": "Formatted LaTeX report prepared by the team.",
+    },
+}
 
 
 def abs_path(*parts):
+    if not parts:
+        return os.path.abspath(os.getcwd())
     return os.path.abspath(os.path.join(*parts))
 
 
@@ -62,6 +77,37 @@ def query_gpu():
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/api/reports", methods=["GET"])
+def get_reports():
+    reports = []
+    for report_id, metadata in REPORT_FILES.items():
+        path = abs_path(metadata["path"])
+        reports.append({
+            "id": report_id,
+            "title": metadata["title"],
+            "description": metadata["description"],
+            "available": os.path.exists(path),
+            "url": f"/reports/{report_id}",
+        })
+    return jsonify({"success": True, "reports": reports})
+
+
+@app.route("/reports/<report_id>", methods=["GET"])
+def serve_report(report_id):
+    if report_id not in REPORT_FILES:
+        return jsonify({"success": False, "error": "Unknown report"}), 404
+
+    report_path = Path(abs_path(REPORT_FILES[report_id]["path"])).resolve()
+    project_root = Path(abs_path()).resolve()
+
+    if project_root not in report_path.parents and report_path != project_root:
+        return jsonify({"success": False, "error": "Invalid report path"}), 403
+    if not report_path.exists():
+        return jsonify({"success": False, "error": "Report file not found"}), 404
+
+    return send_file(report_path, as_attachment=False)
 
 
 @app.route("/api/system-resources", methods=["GET"])
@@ -171,6 +217,7 @@ def get_graph_data():
 def build_command(algorithm, graph_path, source, threads, processes):
     exe_map = {
         "serial": "bellman_ford_serial.exe",
+        "posix": "bellman_ford_posix.exe",
         "openmp": "bellman_ford_openmp.exe",
         "mpi": "bellman_ford_mpi.exe",
         "hybrid": "bellman_ford_hybrid.exe",
@@ -184,7 +231,7 @@ def build_command(algorithm, graph_path, source, threads, processes):
     if not os.path.exists(exe_path):
         raise FileNotFoundError(f"Implementation not found: {exe_map[algorithm]}")
 
-    if algorithm == "openmp":
+    if algorithm in {"posix", "openmp"}:
         return [exe_path, graph_path, str(source), str(threads)]
     if algorithm == "mpi":
         return [MPIEXEC, "-n", str(processes), exe_path, graph_path, str(source)]

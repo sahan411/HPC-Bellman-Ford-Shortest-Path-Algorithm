@@ -43,6 +43,7 @@ except ImportError:
 # ============================================================
 VERSION_COLORS = {
     "serial":  "#555555",
+    "posix":   "#00BCD4",  # cyan
     "openmp":  "#2196F3",  # blue
     "mpi":     "#4CAF50",  # green
     "hybrid":  "#FF9800",  # orange
@@ -50,7 +51,8 @@ VERSION_COLORS = {
 }
 
 # Order for the legend
-VERSION_ORDER = ["serial", "openmp", "mpi", "hybrid", "mpi_cuda"]
+VERSION_ORDER = ["serial", "posix", "openmp", "mpi", "hybrid", "mpi_cuda"]
+CPU_VERSION_ORDER = ["serial", "posix", "openmp", "mpi", "hybrid"]
 
 GRAPH_SIZES = ["tiny", "small", "medium", "large", "xlarge_pos", "xxlarge_pos"]
 
@@ -76,7 +78,8 @@ def group_by_graph(rows):
     return groups
 
 
-def plot_execution_time(groups, output_dir):
+def plot_execution_time(groups, output_dir, versions, filename, title,
+                        log_scale=False):
     """
     Bar chart: Execution time (seconds) for each version/config,
     grouped by graph size.
@@ -85,8 +88,7 @@ def plot_execution_time(groups, output_dir):
         return
 
     fig, axes = plt.subplots(3, 2, figsize=(16, 14))
-    fig.suptitle("Execution Time by Version and Graph Size",
-                  fontsize=14, fontweight="bold")
+    fig.suptitle(title, fontsize=14, fontweight="bold")
 
     axes_flat = axes.flatten()
 
@@ -103,6 +105,8 @@ def plot_execution_time(groups, output_dir):
 
         for row in rows:
             version = row["version"]
+            if version not in versions:
+                continue
             if row["time_sec"] == "N/A":
                 continue
             try:
@@ -130,25 +134,28 @@ def plot_execution_time(groups, output_dir):
         ax.set_xticks(range(len(labels)))
         ax.set_xticklabels(labels, fontsize=7, rotation=30, ha="right")
         ax.set_ylabel("Time (seconds)")
+        if log_scale:
+            ax.set_yscale("log")
+            ax.set_ylabel("Time (seconds, log scale)")
         ax.grid(axis="y", alpha=0.3)
 
     # Legend
     legend_patches = [
         mpatches.Patch(color=VERSION_COLORS[v], label=v.upper())
-        for v in VERSION_ORDER if v in VERSION_COLORS
+        for v in versions if v in VERSION_COLORS
     ]
     fig.legend(handles=legend_patches, loc="lower center",
                ncol=len(legend_patches), fontsize=9,
                bbox_to_anchor=(0.5, 0.01))
 
     plt.tight_layout(rect=[0, 0.05, 1, 1])
-    out_path = os.path.join(output_dir, "execution_time.png")
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  Saved: {out_path}")
 
 
-def plot_speedup(groups, output_dir):
+def plot_speedup(groups, output_dir, versions, filename, title):
     """
     Line chart: Speedup (relative to serial) for each version/config,
     grouped by graph size.
@@ -157,8 +164,7 @@ def plot_speedup(groups, output_dir):
         return
 
     fig, axes = plt.subplots(3, 2, figsize=(16, 14))
-    fig.suptitle("Speedup vs Serial Baseline",
-                  fontsize=14, fontweight="bold")
+    fig.suptitle(title, fontsize=14, fontweight="bold")
 
     axes_flat = axes.flatten()
 
@@ -187,7 +193,7 @@ def plot_speedup(groups, output_dir):
         speedups = []
         colors = []
 
-        for version in VERSION_ORDER:
+        for version in versions:
             if version not in version_data:
                 continue
             for config, sp in version_data[version]:
@@ -219,7 +225,7 @@ def plot_speedup(groups, output_dir):
     # Legend
     legend_patches = [
         mpatches.Patch(color=VERSION_COLORS[v], label=v.upper())
-        for v in VERSION_ORDER if v in VERSION_COLORS
+        for v in versions if v in VERSION_COLORS
     ] + [plt.Line2D([0], [0], color="red", linestyle="--", label="Serial (1x)")]
 
     fig.legend(handles=legend_patches, loc="lower center",
@@ -227,7 +233,7 @@ def plot_speedup(groups, output_dir):
                bbox_to_anchor=(0.5, 0.01))
 
     plt.tight_layout(rect=[0, 0.05, 1, 1])
-    out_path = os.path.join(output_dir, "speedup.png")
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  Saved: {out_path}")
@@ -281,8 +287,35 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
 
         print(f"\nGenerating charts -> {output_dir}/")
-        plot_execution_time(groups, output_dir)
-        plot_speedup(groups, output_dir)
+        plot_execution_time(
+            groups,
+            output_dir,
+            CPU_VERSION_ORDER,
+            "execution_time.png",
+            "CPU Execution Time by Version and Graph Size",
+        )
+        plot_speedup(
+            groups,
+            output_dir,
+            CPU_VERSION_ORDER,
+            "speedup.png",
+            "CPU Speedup vs Serial Baseline",
+        )
+        plot_execution_time(
+            groups,
+            output_dir,
+            ["mpi_cuda"],
+            "mpi_cuda_execution_time.png",
+            "MPI+CUDA Execution Time",
+            log_scale=False,
+        )
+        plot_speedup(
+            groups,
+            output_dir,
+            ["mpi_cuda"],
+            "mpi_cuda_speedup.png",
+            "MPI+CUDA Speedup vs Serial Baseline",
+        )
         print("\nDone!")
     else:
         print("\nInstall matplotlib to generate charts:")

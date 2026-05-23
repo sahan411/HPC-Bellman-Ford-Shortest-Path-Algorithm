@@ -29,7 +29,7 @@
                     <i class="fa-solid fa-chart-line"></i>
                     <span>Benchmarks</span>
                 </a>
-                <a href="#" class="nav-item tooltip-trigger" title="Coming soon">
+                <a href="#" class="nav-item" id="nav-reports">
                     <i class="fa-solid fa-file-pdf"></i>
                     <span>Reports</span>
                 </a>
@@ -65,6 +65,7 @@
                             <div class="custom-select-wrapper">
                                 <select id="algorithm" name="algorithm" required>
                                     <option value="serial">Serial Baseline</option>
+                                    <option value="posix">POSIX pthreads (Shared Memory)</option>
                                     <option value="openmp">OpenMP (Shared Memory)</option>
                                     <option value="mpi">MPI (Distributed Memory)</option>
                                     <option value="hybrid">Hybrid (MPI + OpenMP)</option>
@@ -199,6 +200,21 @@
                                 <!-- Data injected via JS -->
                             </tbody>
                         </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Reports View -->
+            <div class="reports-view hidden" id="view-reports">
+                <section class="card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-file-lines"></i> Project Reports</h3>
+                        <div class="status-indicator">
+                            <span id="report-status" style="color: var(--text-muted)">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="report-list" id="report-list">
+                        <!-- Report links injected via JS -->
                     </div>
                 </section>
             </div>

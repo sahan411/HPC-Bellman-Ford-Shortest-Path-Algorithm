@@ -49,6 +49,9 @@ REPS = 3
 # Source vertex for all tests
 SOURCE = 0
 
+# Shared-memory thread counts to test
+POSIX_THREADS = [1, 2, 4, 8]
+
 # OpenMP thread counts to test
 OMP_THREADS = [1, 2, 4, 8]
 
@@ -122,6 +125,13 @@ def run_openmp(graph_file, source, threads):
     cmd = [r".\bin\bellman_ford_openmp.exe", graph_file, str(source),
            str(threads)]
     return run_cmd(cmd, env=env)
+
+
+def run_posix(graph_file, source, threads):
+    """Run POSIX pthreads version with specified thread count."""
+    cmd = [r".\bin\bellman_ford_posix.exe", graph_file, str(source),
+           str(threads)]
+    return run_cmd(cmd)
 
 
 def run_mpi(graph_file, source, procs):
@@ -212,7 +222,24 @@ def main():
             continue
 
         # ----------------------------------------------------------
-        # Step 2: OpenMP
+        # Step 2: POSIX pthreads
+        # ----------------------------------------------------------
+        print(f"\n[POSIX pthreads]")
+        for threads in POSIX_THREADS:
+            t = best_of(run_posix, graph_file, SOURCE, threads, reps=REPS)
+            sp = speedup(serial_time, t)
+            status = f"{t:.6f}s  speedup={sp:.2f}x" if t else "FAILED"
+            print(f"  {threads:2d} threads: {status}")
+            rows.append({
+                "graph": graph_name,
+                "version": "posix",
+                "config": f"{threads} threads",
+                "time_sec": f"{t:.6f}" if t else "N/A",
+                "speedup": f"{sp:.2f}" if sp else "N/A"
+            })
+
+        # ----------------------------------------------------------
+        # Step 3: OpenMP
         # ----------------------------------------------------------
         print(f"\n[OpenMP]")
         for threads in OMP_THREADS:
@@ -229,7 +256,7 @@ def main():
             })
 
         # ----------------------------------------------------------
-        # Step 3: MPI
+        # Step 4: MPI
         # ----------------------------------------------------------
         print(f"\n[MPI]")
         for procs in MPI_PROCS:
@@ -246,7 +273,7 @@ def main():
             })
 
         # ----------------------------------------------------------
-        # Step 4: Hybrid (MPI + OpenMP)
+        # Step 5: Hybrid (MPI + OpenMP)
         # ----------------------------------------------------------
         print(f"\n[Hybrid MPI+OpenMP]")
         for procs, threads in HYBRID_CONFIGS:
@@ -265,7 +292,7 @@ def main():
             })
 
         # ----------------------------------------------------------
-        # Step 5: MPI+CUDA
+        # Step 6: MPI+CUDA
         # ----------------------------------------------------------
         print(f"\n[MPI+CUDA]")
         for procs in MPI_CUDA_PROCS:
