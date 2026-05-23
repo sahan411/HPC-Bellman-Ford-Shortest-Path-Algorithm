@@ -247,6 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
             processes: parseInt(document.getElementById('processes').value)
         };
 
+        // Start client-side timer at button press
+        const startMs = performance.now();
+
         // Update UI for loading state
         submitBtn.disabled = true;
         submitBtn.querySelector('span').textContent = 'Running...';
@@ -304,7 +307,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (match) timeVal = match[1];
                 }
 
-                statTime.textContent = timeVal ? `${timeVal} s` : "N/A";
+                const elapsedMs = performance.now() - startMs;
+                const elapsedSeconds = (elapsedMs / 1000).toFixed(3);
+                const displayTime = `${elapsedSeconds} s`;
+
+                statTime.textContent = displayTime;
                 
                 let algName = algorithmSelect.options[algorithmSelect.selectedIndex].text;
                 if (payload.algorithm === 'openmp') algName += ` (${payload.threads} threads)`;
