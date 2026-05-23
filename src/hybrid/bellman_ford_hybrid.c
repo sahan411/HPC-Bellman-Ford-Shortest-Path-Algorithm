@@ -127,8 +127,9 @@ int bellman_ford_hybrid(Graph *graph, int source, int *dist,
          *   Thread 2: edges 2000-2499
          *   Thread 3: edges 2500-2999
          *
-         * Same race condition approach as pure OpenMP: small races on dist[]
-         * are tolerable because MPI_Allreduce with MPI_MIN corrects them.
+         * FIXED: Now uses critical section to eliminate race conditions
+         * where multiple threads could write to dist[v] simultaneously.
+         * MPI_Allreduce with MPI_MIN also helps correct any intermediate issues.
          */
         #pragma omp parallel for schedule(dynamic, 1024) reduction(|:local_updated)
         for (j = my_start; j < my_end; j++) {
@@ -137,8 +138,14 @@ int bellman_ford_hybrid(Graph *graph, int source, int *dist,
             int w = edges[j].weight;
 
             if (dist[u] != INF && dist[u] + w < dist[v]) {
-                dist[v] = dist[u] + w;
-                local_updated = 1;
+                int new_dist = dist[u] + w;
+                #pragma omp critical
+                {
+                    if (new_dist < dist[v]) {
+                        dist[v] = new_dist;
+                        local_updated = 1;
+                    }
+                }
             }
         }
 

@@ -23,6 +23,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const graphWarning = document.getElementById('graph-warning');
     const graphStats = document.getElementById('graph-stats');
     let network = null;
+    let systemResources = null;
+
+    // 0. Fetch system resources on page load
+    fetchSystemResources();
+
+    async function fetchSystemResources() {
+        try {
+            const response = await fetch('/api/system-resources');
+            const data = await response.json();
+            
+            if (data.success) {
+                systemResources = data;
+                
+                // Update form limits based on actual CPU count
+                const threadsInput = document.getElementById('threads');
+                const processesInput = document.getElementById('processes');
+                
+                threadsInput.max = data.cpu_cores;
+                processesInput.max = data.cpu_cores;
+                
+                // Set defaults to actual CPU count (capped at 4)
+                const defaultValue = Math.min(data.cpu_cores, 4);
+                threadsInput.value = defaultValue;
+                processesInput.value = defaultValue;
+                
+                // Add system info to console
+                consoleOutput.textContent = 
+                    `System Resources Detected:\n` +
+                    `- CPU Cores: ${data.cpu_cores}\n` +
+                    `- CPU Usage: ${data.cpu_percent}%\n` +
+                    `- Memory: ${data.memory_available_gb}/${data.memory_total_gb} GB available\n` +
+                    `- Memory Usage: ${data.memory_percent}%\n\n` +
+                    `Ready for execution...`;
+                
+                console.log('System resources loaded:', data);
+            } else {
+                console.warn('Could not fetch system resources:', data.error);
+                // Fallback to defaults if fetch fails
+                document.getElementById('threads').max = 128;
+                document.getElementById('processes').max = 128;
+            }
+        } catch (error) {
+            console.warn('Error fetching system resources:', error);
+        }
+    }
 
     // 1. Fetch available graphs on load
     fetchGraphs();
@@ -230,13 +275,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusDot.className = 'dot success';
                 statusText.textContent = 'Execution Complete';
                 
+                // Display warnings if any
+                let output = '';
+                if (data.warnings && data.warnings.length > 0) {
+                    output += '⚠️ WARNINGS:\n';
+                    data.warnings.forEach(warning => {
+                        output += `  - ${warning}\n`;
+                    });
+                    output += '\n---\n\n';
+                }
+                
                 // Display output
                 let filteredOutput = data.stdout;
                 // If it's too long, truncate it
                 if (filteredOutput.length > 50000) {
                      filteredOutput = filteredOutput.substring(0, 50000) + "\n\n...[OUTPUT TRUNCATED - TOO LONG TO DISPLAY]...";
                 }
-                consoleOutput.textContent = filteredOutput;
+                output += filteredOutput;
+                consoleOutput.textContent = output;
 
                 // Update Stats
                 statsContainer.classList.remove('hidden');
