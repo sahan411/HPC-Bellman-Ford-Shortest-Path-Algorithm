@@ -147,7 +147,7 @@ int bellman_ford_posix(Graph *graph, int source, int *dist, int num_threads) {
     printf("Running Bellman-Ford POSIX pthreads with %d threads...\n", num_threads);
     printf("  %d vertices, %d edges, up to %d iterations\n", V, E, V - 1);
 
-    int early_stop_iter = V - 1;
+    int stopped_early = 0;
 
     for (int iter = 0; iter < V - 1; iter++) {
         memcpy(next, current, V * sizeof(int));
@@ -167,7 +167,7 @@ int bellman_ford_posix(Graph *graph, int source, int *dist, int num_threads) {
         }
 
         if (!updated) {
-            early_stop_iter = iter + 1;
+            stopped_early = 1;
             printf("  Early termination at iteration %d (no changes)\n", iter + 1);
             break;
         }
@@ -177,7 +177,7 @@ int bellman_ford_posix(Graph *graph, int source, int *dist, int num_threads) {
         next = tmp;
     }
 
-    if (early_stop_iter == V - 1) {
+    if (!stopped_early) {
         printf("  Completed all %d iterations\n", V - 1);
     }
 

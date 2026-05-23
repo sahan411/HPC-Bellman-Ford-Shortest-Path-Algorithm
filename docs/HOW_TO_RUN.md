@@ -15,7 +15,8 @@ You need the following tools installed:
 | GCC  | Compiling C code | `gcc --version` |
 | Make | Build system | `make --version` |
 | MPI  | MPI version | `mpicc --version` |
-| CUDA | GPU version | `nvcc --version` |
+| POSIX pthreads | Manual CPU threading | included in MSYS2 UCRT64 POSIX GCC |
+| CUDA | MPI+CUDA GPU support | `nvcc --version` |
 | Flask | Web UI | `python -m flask --version` |
 | psutil | UI resource monitor | `python -c "import psutil; print(psutil.__version__)"` |
 
@@ -88,6 +89,15 @@ gcc -O2 -Wall -fopenmp -o bin/bellman_ford_openmp.exe \
     -Isrc/common
 ```
 
+### Build POSIX pthreads version:
+```bash
+gcc -O2 -Wall -pthread -o bin/bellman_ford_posix.exe \
+    src/posix/bellman_ford_posix.c \
+    src/common/graph.c \
+    src/common/utils.c \
+    -Isrc/common
+```
+
 ### Build MPI version (when ready):
 ```bash
 mpicc -O2 -Wall -o bin/bellman_ford_mpi.exe \
@@ -106,10 +116,10 @@ mpicc -O2 -Wall -fopenmp -o bin/bellman_ford_hybrid.exe \
     -Isrc/common
 ```
 
-### Build CUDA version (when ready):
+### Build MPI+CUDA version:
 ```bash
-nvcc -O2 -o bin/bellman_ford_cuda.exe \
-    src/cuda/bellman_ford_cuda.cu \
+nvcc -O2 -o bin/bellman_ford_mpi_cuda.exe \
+    src/mpi_cuda/bellman_ford_mpi_cuda.cu \
     src/common/graph.c \
     src/common/utils.c \
     -Isrc/common
@@ -188,6 +198,14 @@ set OMP_NUM_THREADS=8 && ./bin/bellman_ford_openmp.exe graphs/large.txt 0
 
 ---
 
+### Run POSIX pthreads Version:
+```bash
+./bin/bellman_ford_posix.exe graphs/large.txt 0 4
+./bin/bellman_ford_posix.exe graphs/large.txt 0 8
+```
+
+---
+
 ### Run MPI Version:
 ```bash
 # -np = number of processes
@@ -207,11 +225,14 @@ mpirun -np 2 ./bin/bellman_ford_hybrid.exe graphs/large.txt 0
 
 ---
 
-### Run CUDA Version:
+### Run MPI+CUDA Version:
 ```bash
-# Just run it - it automatically uses your NVIDIA GPU
-./bin/bellman_ford_cuda.exe graphs/large.txt 0
+# CUDA is used only inside the MPI+CUDA implementation for the final project comparison.
+mpirun -np 2 ./bin/bellman_ford_mpi_cuda.exe graphs/large.txt 0
+mpirun -np 4 ./bin/bellman_ford_mpi_cuda.exe graphs/large.txt 0
 ```
+
+On a single-GPU laptop, MPI+CUDA can be slower than CPU OpenMP/Hybrid because all MPI ranks share one GPU and synchronize through MPI each iteration. It is expected to work better on a multi-GPU machine with one MPI rank per GPU.
 
 ---
 

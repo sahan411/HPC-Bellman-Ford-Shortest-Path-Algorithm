@@ -1,5 +1,9 @@
 graph,version,config,time_sec,speedup
 tiny,serial,1 thread,0.000001,1.00
+tiny,posix,1 threads,0.001521,0.00
+tiny,posix,2 threads,0.001667,0.00
+tiny,posix,4 threads,0.002074,0.00
+tiny,posix,8 threads,0.003187,0.00
 tiny,openmp,1 threads,N/A,N/A
 tiny,openmp,2 threads,0.001000,0.00
 tiny,openmp,4 threads,0.001000,0.00
@@ -10,13 +14,17 @@ tiny,mpi,4 procs,0.000141,0.01
 tiny,mpi,8 procs,0.000201,0.00
 tiny,hybrid,1 procs x 8 threads,0.000784,0.00
 tiny,hybrid,2 procs x 4 threads,0.000916,0.00
-tiny,hybrid,4 procs x 2 threads,0.000555,0.00
-tiny,hybrid,8 procs x 1 threads,0.000405,0.00
 tiny,hybrid,2 procs x 8 threads,0.001204,0.00
+tiny,hybrid,4 procs x 2 threads,0.000555,0.00
 tiny,hybrid,4 procs x 4 threads,0.000781,0.00
+tiny,hybrid,8 procs x 1 threads,0.000405,0.00
 tiny,mpi_cuda,2 procs + CUDA,0.149356,0.00
 tiny,mpi_cuda,4 procs + CUDA,0.181315,0.00
 small,serial,1 thread,0.000133,1.00
+small,posix,1 threads,0.002090,0.06
+small,posix,2 threads,0.003640,0.04
+small,posix,4 threads,0.003818,0.03
+small,posix,8 threads,0.006087,0.02
 small,openmp,1 threads,0.001000,0.13
 small,openmp,2 threads,0.001000,0.13
 small,openmp,4 threads,0.001000,0.13
@@ -27,13 +35,17 @@ small,mpi,4 procs,0.000292,0.46
 small,mpi,8 procs,0.000503,0.26
 small,hybrid,1 procs x 8 threads,0.001228,0.11
 small,hybrid,2 procs x 4 threads,0.002086,0.06
-small,hybrid,4 procs x 2 threads,0.001890,0.07
-small,hybrid,8 procs x 1 threads,0.021196,0.01
 small,hybrid,2 procs x 8 threads,0.002086,0.06
+small,hybrid,4 procs x 2 threads,0.001890,0.07
 small,hybrid,4 procs x 4 threads,0.001620,0.08
+small,hybrid,8 procs x 1 threads,0.021196,0.01
 small,mpi_cuda,2 procs + CUDA,0.143974,0.00
 small,mpi_cuda,4 procs + CUDA,0.143246,0.00
 medium,serial,1 thread,0.001542,1.00
+medium,posix,1 threads,0.009067,0.17
+medium,posix,2 threads,0.008018,0.19
+medium,posix,4 threads,0.008474,0.18
+medium,posix,8 threads,0.012822,0.12
 medium,openmp,1 threads,0.001000,1.54
 medium,openmp,2 threads,0.002000,0.77
 medium,openmp,4 threads,0.002000,0.77
@@ -44,13 +56,17 @@ medium,mpi,4 procs,0.001182,1.30
 medium,mpi,8 procs,0.036539,0.04
 medium,hybrid,1 procs x 8 threads,0.001903,0.81
 medium,hybrid,2 procs x 4 threads,0.002316,0.67
-medium,hybrid,4 procs x 2 threads,0.002888,0.53
-medium,hybrid,8 procs x 1 threads,0.002337,0.66
 medium,hybrid,2 procs x 8 threads,0.003175,0.49
+medium,hybrid,4 procs x 2 threads,0.002888,0.53
 medium,hybrid,4 procs x 4 threads,0.003141,0.49
+medium,hybrid,8 procs x 1 threads,0.002337,0.66
 medium,mpi_cuda,2 procs + CUDA,0.147406,0.01
 medium,mpi_cuda,4 procs + CUDA,0.200787,0.01
 large,serial,1 thread,0.018609,1.00
+large,posix,1 threads,0.173121,0.11
+large,posix,2 threads,0.125835,0.15
+large,posix,4 threads,0.077531,0.24
+large,posix,8 threads,0.081755,0.23
 large,openmp,1 threads,0.021000,0.89
 large,openmp,2 threads,0.017000,1.09
 large,openmp,4 threads,0.011000,1.69
@@ -61,13 +77,17 @@ large,mpi,4 procs,0.012714,1.46
 large,mpi,8 procs,0.019221,0.97
 large,hybrid,1 procs x 8 threads,0.008857,2.10
 large,hybrid,2 procs x 4 threads,0.012458,1.49
-large,hybrid,4 procs x 2 threads,0.013413,1.39
-large,hybrid,8 procs x 1 threads,0.110367,0.17
 large,hybrid,2 procs x 8 threads,0.012207,1.52
+large,hybrid,4 procs x 2 threads,0.013413,1.39
 large,hybrid,4 procs x 4 threads,0.014444,1.29
+large,hybrid,8 procs x 1 threads,0.110367,0.17
 large,mpi_cuda,2 procs + CUDA,0.791917,0.02
 large,mpi_cuda,4 procs + CUDA,0.837827,0.02
 xlarge_pos,serial,1 thread,0.052995,1.00
+xlarge_pos,posix,1 threads,0.092870,0.57
+xlarge_pos,posix,2 threads,0.072072,0.74
+xlarge_pos,posix,4 threads,0.063038,0.84
+xlarge_pos,posix,8 threads,0.057266,0.93
 xlarge_pos,openmp,1 threads,0.049000,1.08
 xlarge_pos,openmp,2 threads,0.025000,2.12
 xlarge_pos,openmp,4 threads,0.019000,2.79
@@ -78,13 +98,17 @@ xlarge_pos,mpi,4 procs,0.034778,1.52
 xlarge_pos,mpi,8 procs,0.068073,0.78
 xlarge_pos,hybrid,1 procs x 8 threads,0.017999,2.94
 xlarge_pos,hybrid,2 procs x 4 threads,0.022451,2.36
-xlarge_pos,hybrid,4 procs x 2 threads,0.035130,1.51
-xlarge_pos,hybrid,8 procs x 1 threads,0.090061,0.59
 xlarge_pos,hybrid,2 procs x 8 threads,0.020170,2.63
+xlarge_pos,hybrid,4 procs x 2 threads,0.035130,1.51
 xlarge_pos,hybrid,4 procs x 4 threads,0.032618,1.62
+xlarge_pos,hybrid,8 procs x 1 threads,0.090061,0.59
 xlarge_pos,mpi_cuda,2 procs + CUDA,0.721424,0.07
 xlarge_pos,mpi_cuda,4 procs + CUDA,0.780160,0.07
 xxlarge_pos,serial,1 thread,0.071039,1.00
+xxlarge_pos,posix,1 threads,0.261119,0.27
+xxlarge_pos,posix,2 threads,0.208561,0.34
+xxlarge_pos,posix,4 threads,0.186160,0.38
+xxlarge_pos,posix,8 threads,0.159591,0.45
 xxlarge_pos,openmp,1 threads,0.070000,1.01
 xxlarge_pos,openmp,2 threads,0.049000,1.45
 xxlarge_pos,openmp,4 threads,0.035000,2.03
@@ -95,9 +119,9 @@ xxlarge_pos,mpi,4 procs,0.065777,1.08
 xxlarge_pos,mpi,8 procs,0.153479,0.46
 xxlarge_pos,hybrid,1 procs x 8 threads,0.036085,1.97
 xxlarge_pos,hybrid,2 procs x 4 threads,0.046077,1.54
-xxlarge_pos,hybrid,4 procs x 2 threads,0.069385,1.02
-xxlarge_pos,hybrid,8 procs x 1 threads,0.156903,0.45
 xxlarge_pos,hybrid,2 procs x 8 threads,0.042013,1.69
+xxlarge_pos,hybrid,4 procs x 2 threads,0.069385,1.02
 xxlarge_pos,hybrid,4 procs x 4 threads,0.063057,1.13
+xxlarge_pos,hybrid,8 procs x 1 threads,0.156903,0.45
 xxlarge_pos,mpi_cuda,2 procs + CUDA,0.757402,0.09
 xxlarge_pos,mpi_cuda,4 procs + CUDA,0.828005,0.09

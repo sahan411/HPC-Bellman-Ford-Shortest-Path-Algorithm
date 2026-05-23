@@ -2,7 +2,7 @@
 
 **Course:** High-Performance Computing  
 **Date:** 22 May 2026  
-**Implementations compared:** Serial, OpenMP, MPI, Hybrid MPI+OpenMP, MPI+CUDA  
+**Implementations compared:** Serial, POSIX pthreads, OpenMP, MPI, Hybrid MPI+OpenMP, MPI+CUDA  
 
 ---
 
@@ -23,6 +23,7 @@ Final implementations tested:
 | Version | Programming model | Parallelism used |
 |---|---|---|
 | Serial | Plain C | Baseline |
+| POSIX pthreads | Shared memory | Manual CPU threads using pthreads |
 | OpenMP | Shared memory | CPU threads on one machine |
 | MPI | Distributed memory | CPU processes with message passing |
 | Hybrid | MPI + OpenMP | MPI processes, each using OpenMP threads |
@@ -42,7 +43,13 @@ Each configuration was run 3 times, and the minimum execution time was reported.
 
 The serial implementation scans all edges repeatedly and stops early when a full pass produces no updates. It is the correctness and speedup baseline.
 
-### 2.2 OpenMP
+### 2.2 POSIX pthreads
+
+The POSIX version was added as an extra shared-memory CPU comparison because it was straightforward to implement with the existing edge-list structure. It manually creates pthread workers and splits the edge list across threads. To keep correctness clear, it uses double-buffered distance arrays and per-vertex mutexes for updates.
+
+Tested thread counts: `1`, `2`, `4`, and `8`.
+
+### 2.3 OpenMP
 
 OpenMP parallelizes the edge-relaxation loop:
 
@@ -55,7 +62,7 @@ for (int e = 0; e < graph->E; e++) {
 
 Tested thread counts: `1`, `2`, `4`, and `8`.
 
-### 2.3 MPI
+### 2.4 MPI
 
 MPI divides the edge array across processes. After each local relaxation pass, all processes combine distances with:
 
@@ -65,7 +72,7 @@ MPI_Allreduce(dist, new_dist, V, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
 Tested process counts: `1`, `2`, `4`, and `8`.
 
-### 2.4 Hybrid MPI+OpenMP
+### 2.5 Hybrid MPI+OpenMP
 
 Hybrid combines the two CPU models:
 
@@ -86,7 +93,7 @@ Tested hybrid configurations:
 
 The 16-worker cases oversubscribe the 8-logical-processor laptop, but they were tested to check whether more hybrid workers helped.
 
-### 2.5 MPI+CUDA
+### 2.6 MPI+CUDA
 
 MPI+CUDA was added for the final run because CUDA should be used to improve the MPI-based implementation rather than run alone.
 
@@ -141,8 +148,10 @@ The graph generator uses Johnson-style vertex potentials so mixed-weight graphs 
 Raw results and charts:
 
 - `results/benchmark_results.csv`
-- `results/charts/execution_time.png`
-- `results/charts/speedup.png`
+- `results/charts/execution_time.png` - CPU-only chart, so MPI+CUDA does not distort the scale
+- `results/charts/speedup.png` - CPU-only speedup chart
+- `results/charts/mpi_cuda_execution_time.png` - MPI+CUDA timing chart
+- `results/charts/mpi_cuda_speedup.png` - MPI+CUDA speedup chart
 
 ---
 
@@ -155,6 +164,10 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 | Version | Config | Time | Speedup |
 |---|---|---:|---:|
 | Serial | 1 thread | 0.000001 | 1.00x |
+| POSIX pthreads | 1 thread | 0.001521 | 0.00x |
+| POSIX pthreads | 2 threads | 0.001667 | 0.00x |
+| POSIX pthreads | 4 threads | 0.002074 | 0.00x |
+| POSIX pthreads | 8 threads | 0.003187 | 0.00x |
 | OpenMP | 1 thread | N/A | N/A |
 | OpenMP | 2 threads | 0.001000 | 0.00x |
 | OpenMP | 4 threads | 0.001000 | 0.00x |
@@ -177,6 +190,10 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 | Version | Config | Time | Speedup |
 |---|---|---:|---:|
 | Serial | 1 thread | 0.000133 | 1.00x |
+| POSIX pthreads | 1 thread | 0.002090 | 0.06x |
+| POSIX pthreads | 2 threads | 0.003640 | 0.04x |
+| POSIX pthreads | 4 threads | 0.003818 | 0.03x |
+| POSIX pthreads | 8 threads | 0.006087 | 0.02x |
 | OpenMP | 1 thread | 0.001000 | 0.13x |
 | OpenMP | 2 threads | 0.001000 | 0.13x |
 | OpenMP | 4 threads | 0.001000 | 0.13x |
@@ -199,6 +216,10 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 | Version | Config | Time | Speedup |
 |---|---|---:|---:|
 | Serial | 1 thread | 0.001542 | 1.00x |
+| POSIX pthreads | 1 thread | 0.009067 | 0.17x |
+| POSIX pthreads | 2 threads | 0.008018 | 0.19x |
+| POSIX pthreads | 4 threads | 0.008474 | 0.18x |
+| POSIX pthreads | 8 threads | 0.012822 | 0.12x |
 | OpenMP | 1 thread | 0.001000 | 1.54x |
 | OpenMP | 2 threads | 0.002000 | 0.77x |
 | OpenMP | 4 threads | 0.002000 | 0.77x |
@@ -221,6 +242,10 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 | Version | Config | Time | Speedup |
 |---|---|---:|---:|
 | Serial | 1 thread | 0.018609 | 1.00x |
+| POSIX pthreads | 1 thread | 0.173121 | 0.11x |
+| POSIX pthreads | 2 threads | 0.125835 | 0.15x |
+| POSIX pthreads | 4 threads | 0.077531 | 0.24x |
+| POSIX pthreads | 8 threads | 0.081755 | 0.23x |
 | OpenMP | 1 thread | 0.021000 | 0.89x |
 | OpenMP | 2 threads | 0.017000 | 1.09x |
 | OpenMP | 4 threads | 0.011000 | 1.69x |
@@ -243,6 +268,10 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 | Version | Config | Time | Speedup |
 |---|---|---:|---:|
 | Serial | 1 thread | 0.052995 | 1.00x |
+| POSIX pthreads | 1 thread | 0.092870 | 0.57x |
+| POSIX pthreads | 2 threads | 0.072072 | 0.74x |
+| POSIX pthreads | 4 threads | 0.063038 | 0.84x |
+| POSIX pthreads | 8 threads | 0.057266 | 0.93x |
 | OpenMP | 1 thread | 0.049000 | 1.08x |
 | OpenMP | 2 threads | 0.025000 | 2.12x |
 | OpenMP | 4 threads | 0.019000 | 2.79x |
@@ -265,6 +294,10 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 | Version | Config | Time | Speedup |
 |---|---|---:|---:|
 | Serial | 1 thread | 0.071039 | 1.00x |
+| POSIX pthreads | 1 thread | 0.261119 | 0.27x |
+| POSIX pthreads | 2 threads | 0.208561 | 0.34x |
+| POSIX pthreads | 4 threads | 0.186160 | 0.38x |
+| POSIX pthreads | 8 threads | 0.159591 | 0.45x |
 | OpenMP | 1 thread | 0.070000 | 1.01x |
 | OpenMP | 2 threads | 0.049000 | 1.45x |
 | OpenMP | 4 threads | 0.035000 | 2.03x |
@@ -299,7 +332,19 @@ All times are in seconds. Speedup is relative to serial on the same dataset.
 
 The meaningful results are the large datasets. Tiny, small, and medium are heavily affected by timing granularity and framework overhead.
 
-### 6.2 OpenMP Scaling
+### 6.2 POSIX pthreads Scaling
+
+POSIX pthreads was correct on all datasets, but it did not beat the serial baseline. The best POSIX result was `0.93x` on `xlarge_pos` with 8 threads.
+
+| Dataset | 1 thread | 2 threads | 4 threads | 8 threads |
+|---|---:|---:|---:|---:|
+| large | 0.11x | 0.15x | 0.24x | 0.23x |
+| xlarge_pos | 0.57x | 0.74x | 0.84x | 0.93x |
+| xxlarge_pos | 0.27x | 0.34x | 0.38x | 0.45x |
+
+The pthreads implementation uses explicit thread creation and per-vertex mutexes. That makes it a valid shared-memory implementation, but the locking and manual thread-management overhead are higher than the OpenMP runtime on this machine.
+
+### 6.3 OpenMP Scaling
 
 OpenMP is the strongest model on this single machine:
 
@@ -311,7 +356,7 @@ OpenMP is the strongest model on this single machine:
 
 The best final result is **OpenMP 8 threads on `xlarge_pos`**, with **4.08x speedup**.
 
-### 6.3 MPI Scaling
+### 6.4 MPI Scaling
 
 MPI improves for larger datasets, but does not keep improving at 8 processes:
 
@@ -323,7 +368,7 @@ MPI improves for larger datasets, but does not keep improving at 8 processes:
 
 The main limitation is `MPI_Allreduce` on the full distance array after every iteration. On a single machine, the communication and synchronization overhead grows quickly as process count increases.
 
-### 6.4 Hybrid MPI+OpenMP
+### 6.5 Hybrid MPI+OpenMP
 
 Hybrid performs best when it uses fewer MPI processes and more OpenMP threads:
 
@@ -335,7 +380,7 @@ Hybrid performs best when it uses fewer MPI processes and more OpenMP threads:
 
 `1 proc x 8 threads` is the best hybrid layout because it avoids most MPI communication. MPI-heavy layouts are slower.
 
-### 6.5 MPI+CUDA Results
+### 6.6 MPI+CUDA Results
 
 | Dataset | 2 procs + CUDA | 4 procs + CUDA | Best MPI+CUDA |
 |---|---:|---:|---:|
@@ -353,25 +398,29 @@ MPI+CUDA was correct, but it did not improve performance on this hardware. The r
 
 Therefore the GPU work is dominated by GPU context overhead, memory copies, and MPI synchronization. MPI+CUDA is the correct direction for a multi-GPU system, but this laptop is not the correct hardware for it.
 
+Running on Google Colab may not fix MPI+CUDA by itself. Colab usually gives one GPU to one notebook, and it is not a normal multi-node MPI environment. A better Colab GPU can reduce CUDA kernel time, but the MPI+CUDA design still needs multi-GPU hardware and GPU-aware communication to show the expected benefit.
+
 ---
 
 ## 7. Key Findings
 
 1. **OpenMP 8 threads is the best final result.** It reaches `4.08x` on `xlarge_pos` and `2.84x` on `xxlarge_pos`.
 
-2. **MPI improves only up to 2 or 4 processes.** At 8 processes, `MPI_Allreduce` overhead dominates.
+2. **POSIX pthreads is correct but slower than OpenMP.** It is useful as a manual shared-memory comparison, but per-vertex locking makes it slower than the OpenMP implementation.
 
-3. **Hybrid works best with fewer MPI ranks.** `1 proc x 8 threads` is consistently the best hybrid configuration.
+3. **MPI improves only up to 2 or 4 processes.** At 8 processes, `MPI_Allreduce` overhead dominates.
 
-4. **MPI+CUDA was implemented and verified, but it did not improve performance on this single-GPU laptop.** Best MPI+CUDA speedup was only `0.09x`.
+4. **Hybrid works best with fewer MPI ranks.** `1 proc x 8 threads` is consistently the best hybrid configuration.
 
-5. **CUDA should improve performance only with the right hardware design.** A practical MPI+CUDA version needs multiple GPUs, preferably one GPU per MPI rank, and ideally GPU-aware MPI to avoid copying the distance array through host memory each iteration.
+5. **MPI+CUDA was implemented and verified, but it did not improve performance on this single-GPU laptop.** Best MPI+CUDA speedup was only `0.09x`.
+
+6. **CUDA should improve performance only with the right hardware design.** A practical MPI+CUDA version needs multiple GPUs, preferably one GPU per MPI rank, and ideally GPU-aware MPI to avoid copying the distance array through host memory each iteration.
 
 ---
 
 ## 8. Conclusion
 
-The project successfully implemented and benchmarked Serial, OpenMP, MPI, Hybrid MPI+OpenMP, and MPI+CUDA versions of Bellman-Ford. Standalone CUDA was removed from the final comparison, and CUDA was tested only as part of MPI+CUDA.
+The project successfully implemented and benchmarked Serial, POSIX pthreads, OpenMP, MPI, Hybrid MPI+OpenMP, and MPI+CUDA versions of Bellman-Ford. Standalone CUDA was removed from the final comparison, and CUDA was tested only as part of MPI+CUDA.
 
 The best measured implementation on this machine is **OpenMP with 8 threads**, with a peak speedup of **4.08x** on `xlarge_pos`. MPI and Hybrid show useful speedups, but only when MPI communication is limited. MPI+CUDA is correct but slower on this single-GPU laptop because all MPI ranks share one GPU and must copy distances between GPU and CPU for every `MPI_Allreduce`.
 
@@ -379,6 +428,7 @@ Final recommendation:
 
 ```text
 Use OpenMP 8 threads as the best-performing result for this hardware.
+Use POSIX pthreads as a correct manual-threading comparison, not as the best result.
 Use MPI and Hybrid results to explain process-level communication overhead.
 Include MPI+CUDA as implemented and verified, but explain that it needs multi-GPU hardware to improve performance.
 ```
@@ -393,6 +443,7 @@ Include MPI+CUDA as implemented and verified, but explain that it needs multi-GP
 - Reduce MPI+CUDA synchronization frequency by checking early termination less often.
 - Profile the MPI+CUDA implementation with Nsight Systems to separate kernel time, memcpy time, and MPI time.
 - Test larger graphs where GPU kernel work is large enough to outweigh fixed GPU and MPI overhead.
+- Improve POSIX pthreads by reusing persistent worker threads across Bellman-Ford iterations instead of creating workers every iteration.
 
 ---
 
