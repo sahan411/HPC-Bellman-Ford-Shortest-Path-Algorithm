@@ -2,12 +2,10 @@ from flask import Flask, render_template, request, jsonify
 import os
 import subprocess
 import glob
-<<<<<<< HEAD
+
 import csv
-=======
 import psutil
 import multiprocessing
->>>>>>> 199a8666ee01a721a3109eece8ecad271655d22b
 
 app = Flask(__name__)
 
@@ -144,36 +142,54 @@ def run_algorithm():
     if not os.path.exists(graph_path):
         return jsonify({"success": False, "error": f"Graph file {graph_file} not found."})
 
-    process = None
     try:
-        import sys
-        python_exe = sys.executable
+        # Detect correct WSL distribution (avoid docker-desktop)
+        distro_arg = []
+        try:
+            wsl_list = subprocess.check_output(["wsl", "-l", "-q"], text=True, encoding='utf-16le', errors='ignore')
+            for line in wsl_list.splitlines():
+                distro = line.strip('\x00').strip()
+                if distro and "docker" not in distro.lower():
+                    distro_arg = ["-d", distro]
+                    break
+        except Exception:
+            pass
+
+        # Convert Windows paths to WSL format (e.g., F:\HPC\... to /mnt/f/HPC/...)
+        def wsl_path(win_path):
+            if not win_path: return win_path
+            path = win_path.replace('\\', '/')
+            if ':' in path:
+                drive, rest = path.split(':', 1)
+                path = f"/mnt/{drive.lower()}{rest}"
+            return path
+
+        wsl_graph_path = wsl_path(os.path.abspath(graph_path))
+        wsl_bin_dir = wsl_path(os.path.abspath(BIN_DIR))
+
+        if algorithm == 'serial':
+            executable = f"{wsl_bin_dir}/bellman_ford_serial"
+            command = ["wsl"] + distro_arg + [executable, wsl_graph_path, str(source)]
         
-        # Map algorithm to implementation
-        script_map = {
-            'serial': 'bellman_ford_serial.py',
-            'openmp': 'bellman_ford_openmp.py',
-            'mpi': 'bellman_ford_mpi.py',
-            'hybrid': 'bellman_ford_hybrid.py',
-            'cuda': 'bellman_ford_cuda.py'
-        }
-        
-        if algorithm not in script_map:
-            return jsonify({"success": False, "error": f"Unknown algorithm: {algorithm}"})
-        
-        script_name = script_map[algorithm]
-        script_path = os.path.abspath(os.path.join(BIN_DIR, script_name))
-        
-        if not os.path.exists(script_path):
-            return jsonify({"success": False, "error": f"Implementation not found: {script_name}"})
-        
-        # Build command based on algorithm
-        if algorithm == 'openmp':
-            command = [python_exe, script_path, graph_path, str(source), str(threads)]
+        elif algorithm == 'openmp':
+            executable = f"{wsl_bin_dir}/bellman_ford_openmp"
+            command = ["wsl"] + distro_arg + ["bash", "-c", f"export OMP_NUM_THREADS={threads} && {executable} {wsl_graph_path} {source}"]
+            
+        elif algorithm == 'mpi':
+            executable = f"{wsl_bin_dir}/bellman_ford_mpi"
+            command = ["wsl"] + distro_arg + ["mpiexec", "-np", str(processes), executable, wsl_graph_path, str(source)]
+            
+        elif algorithm == 'hybrid':
+            executable = f"{wsl_bin_dir}/bellman_ford_hybrid"
+            command = ["wsl"] + distro_arg + ["bash", "-c", f"export OMP_NUM_THREADS={threads} && mpiexec -np {processes} {executable} {wsl_graph_path} {source}"]
+            
+        elif algorithm == 'cuda':
+            executable = f"{wsl_bin_dir}/bellman_ford_cuda"
+            command = ["wsl"] + distro_arg + [executable, wsl_graph_path, str(source)]
+            
         else:
-            command = [python_exe, script_path, graph_path, str(source)]
-        
-        # Run the algorithm
+            return jsonify({"success": False, "error": f"Unknown algorithm: {algorithm}"})
+
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -191,7 +207,7 @@ def run_algorithm():
         # Parse execution time
         time_elapsed = None
         for line in stdout_data.split('\n'):
-            if "Execution time:" in line:
+            if "Execution time" in line:
                 try:
                     time_elapsed = line.split(':')[1].strip().split()[0]
                 except:
